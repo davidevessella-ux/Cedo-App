@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cedolini Pro">
+    <meta name="theme-color" content="#0A0A0A">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Cedolini Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #0A0A0A;
+            --card: #1A1A1E;
+            --text: #FFF;
+            --text2: #999;
+            --blue: #3B82F6;
+            --green: #10B981;
+            --red: #EF4444;
+            --orange: #F59E0B;
+            --purple: #8B5CF6;
+            --gold: #FFD700;
+            --radius: 16px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            background: rgba(10,10,10,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: sticky;
+            top:0; z-index:100;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .header h1 { font-size: 20px; font-weight: 700; }
+        .header-nav { margin-left: auto; display: flex; gap: 4px; }
+        .nav-btn {
+            padding: 7px 12px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .nav-btn.active { background: var(--blue); border-color: var(--blue); }
+        .screen { display: none; padding: 16px; animation: fadeIn 0.3s; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .card .lbl {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text2);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .card .val { font-size: 20px; font-weight: 800; }
+        .card .val.g { color: var(--green); }
+        .card .val.b { color: var(--blue); }
+        .card .sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+        .prog-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .prog-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+        .prog-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .prog-icon.f { background: rgba(59,130,246,0.2); }
+        .prog-icon.r { background: rgba(139,92,246,0.2); }
+        .prog-icon.bp { background: rgba(245,158,11,0.2); }
+        .bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; margin: 8px 0; }
+        .bar-fill { height: 100%; border-radius: 8px; transition: width 0.5s; }
+        .bar-fill.f { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+        .bar-fill.r { background: linear-gradient(90deg, #8B5CF6, #A78BFA); }
+        .bar-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); }
+        .bar-info strong { color: var(--text); }
+        .bp-highlight {
+            background: rgba(245,158,11,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .upload-zone {
+            background: var(--card);
+            border: 2px dashed rgba(59,130,246,0.3);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .upload-zone .icon { font-size: 48px; margin-bottom: 10px; }
+        .upload-zone h3 { font-size: 18px; margin-bottom: 4px; }
+        .upload-zone p { color: var(--text2); font-size: 13px; }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .btn-blue { background: var(--blue); color: #fff; margin-top: 12px; }
+        .btn-green { background: var(--green); color: #fff; width: 100%; padding: 16px; font-size: 16px; }
+        .btn-outline {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text);
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 8px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-outline:active { transform: scale(0.96); }
+        .pdf-box {
+            background: #222;
+            border-radius: var(--radius);
+            overflow: auto;
+            margin-bottom: 12px;
+            max-height: 60vh;
+            -webkit-overflow-scrolling: touch;
+        }
+        .pdf-box canvas {
+            display: block;
+            width: auto;
+            min-width: 100%;
+            height: auto;
+        }
+        .pdf-nav { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: #111; }
+        .pdf-nav button { padding: 8px 16px; background: var(--blue); border: none; border-radius: 8px; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+        .pdf-nav span { font-size: 13px; color: var(--text2); }
+        .form-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+        .form-card h3 { font-size: 16px; margin-bottom: 4px; }
+        .form-subtitle { font-size: 11px; color: var(--text2); margin-bottom: 12px; }
+        .form-group { margin-bottom: 10px; }
+        .form-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 4px; }
+        .tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+        .tag.auto { background: rgba(16,185,129,0.2); color: var(--green); }
+        .tag.manual { background: rgba(245,158,11,0.2); color: var(--orange); }
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 18px;
+            font-family: inherit;
+            font-weight: 600;
+        }
+        .form-input:focus { outline: none; border-color: var(--blue); }
+        .form-input.found { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.08); color: var(--green); }
+        .form-input.mese { color: var(--blue); font-size: 16px; }
+        .form-select {
+            width: 100%;
+            padding: 14px;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 16px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .form-select:focus { outline: none; border-color: var(--blue); }
+        .chart-box { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+        .chart-box h3 { font-size: 14px; margin-bottom: 10px; }
+        .chart-inner { height: 250px; }
+        .toast {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card);
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 13px;
+            z-index: 999;
+            display: none;
+        }
+        .month-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; margin-top: 8px; }
+        .month-cell { aspect-ratio: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+        .month-cell.filled { background: var(--green); color: #000; }
+        .month-cell.empty { background: rgba(255,255,255,0.05); color: var(--text2); }
+        .extra-badge {
+            display: inline-block;
+            background: rgba(255,215,0,0.15);
+            color: var(--gold);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">💎</div>
+        <h1>Cedolini Pro</h1>
+        <div class="header-nav">
+            <button class="nav-btn active" data-scr="home">Home</button>
+            <button class="nav-btn" data-scr="add">+ Nuovo</button>
+            <button class="nav-btn" data-scr="buonipasto">🍽️ BP</button>
+            <button class="nav-btn" data-scr="charts">📊 Grafici</button>
+        </div>
+    </header>
+
+    <main id="home" class="screen active">
+        <div class="cards">
+            <div class="card"><div class="lbl">💰 Ultimo Netto</div><div class="val g" id="hNetto">€0</div><div class="sub" id="hDate">--</div></div>
+            <div class="card"><div class="lbl">📅 Competenza</div><div class="val b" id="hMese">--</div><div class="sub" id="hInfo">--</div></div>
+        </div>
+
+        <div class="prog-card" style="border:1px solid rgba(16,185,129,0.2);">
+            <div class="prog-head"><div class="prog-icon" style="background:rgba(16,185,129,0.2);">💶</div>Totale Annuale</div>
+            <div style="font-size:28px; font-weight:800; color:var(--green);" id="totaleNetto">€0</div>
+            <div style="font-size:11px; color:var(--text2); margin-top:4px;" id="totaleInfo"></div>
+            <div id="extraBadges" style="margin-top:6px;"></div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                <div style="font-size:13px; color:var(--text2);">Mesi</div>
+                <div style="font-size:20px; font-weight:800; color:var(--blue);" id="totaleMesi">0/12</div>
+            </div>
+            <div class="month-grid" id="monthGrid"></div>
+        </div>
+
+        <div class="prog-card"><div class="prog-head"><div class="prog-icon f">🏖️</div>Ferie</div><div class="bar"><div class="bar-fill f" id="fBar" style="width:0%"></div></div><div class="bar-info"><span>Godute: <strong id="fGod">0 gg</strong></span><span>Residue: <strong id="fRes">0 gg</strong></span></div></div>
+        <div class="prog-card"><div class="prog-head"><div class="prog-icon r">⏰</div>ROL</div><div class="bar"><div class="bar-fill r" id="rBar" style="width:0%"></div></div><div class="bar-info"><span>Goduti: <strong id="rGod">0 ore</strong></span><span>Residui: <strong id="rRes">0 ore</strong></span></div></div>
+        <div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>Buoni Pasto Cumulati</div><div id="bpPreview" style="font-size:13px;">Carica un cedolino</div></div>
+    </main>
+
+    <main id="add" class="screen">
+        <div id="uploadSection">
+            <div class="upload-zone" id="upBox">
+                <div class="icon">📄</div><h3>Carica cedolino PDF</h3><p>INAZ - LUL-...pdf</p>
+                <input type="file" id="pdfInput" accept=".pdf" hidden>
+                <button class="btn btn-blue" onclick="document.getElementById('pdfInput').click()">Seleziona file</button>
+            </div>
+        </div>
+
+        <div id="workSection" style="display:none;">
+            <div class="pdf-box"><canvas id="pdfCanvas"></canvas>
+                <div class="pdf-nav"><button onclick="app.prevPage()">◀ Pag 1</button><span id="pageInfo">1/2</span><button onclick="app.nextPage()">Pag 2 ▶</button></div>
+            </div>
+            <div class="form-card">
+                <h3>✍️ Dati Cedolino</h3><p class="form-subtitle">Controlla e correggi se necessario</p>
+                
+                <div class="form-group">
+                    <label class="form-label">🏷️ Tipo Cedolino</label>
+                    <select id="tipoInput" class="form-select">
+                        <option value="normale">📅 Stipendio Mensile</option>
+                        <option value="tredicesima">🎄 Tredicesima</option>
+                        <option value="quattordicesima">🌴 Quattordicesima</option>
+                    </select>
+                </div>
+
+                <div class="form-group"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese" required></div>
+                <div class="form-group"><label class="form-label">💰 Netto a Pagare <span class="tag" id="tagNetto">--</span></label><input type="number" id="nettoInput" class="form-input" step="0.01" required></div>
+                <div class="form-group"><label class="form-label">🏖️ Ferie GODUTE <span class="tag" id="tagFerieG">--</span></label><input type="number" id="ferieGInput" class="form-input" step="0.01"></div>
+                <div class="form-group"><label class="form-label">🏖️ Ferie RESIDUE <span class="tag" id="tagFerieR">--</span></label><input type="number" id="ferieRInput" class="form-input" step="0.01"></div>
+                <div class="form-group"><label class="form-label">⏰ ROL GODUTI <span class="tag" id="tagRolG">--</span></label><input type="number" id="rolGInput" class="form-input" step="0.01"></div>
+                <div class="form-group"><label class="form-label">⏰ ROL RESIDUI <span class="tag" id="tagRolR">--</span></label><input type="number" id="rolRInput" class="form-input" step="0.01"></div>
+                <div class="form-group"><label class="form-label">🍽️ Giorni Lavorativi <span class="tag" id="tagGgLav">--</span></label><input type="number" id="ggLavInput" class="form-input" step="1" placeholder="Auto da calendario"></div>
+                <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
+                <button class="btn-outline" onclick="app.annulla()">❌ Annulla</button>
+            </div>
+        </div>
+    </main>
+
+    <main id="buonipasto" class="screen"><h3 style="margin-bottom:16px;">🍽️ Buoni Pasto</h3><div id="bpContent"></div></main>
+
+    <main id="charts" class="screen">
+        <div class="chart-box"><h3>📊 Confronto: <span id="chartYearCurr"></span> vs <span id="chartYearPrev"></span></h3><div class="chart-inner"><canvas id="compareChart"></canvas></div></div>
+        <div class="chart-box"><h3>📈 Totale Annuale</h3><div class="chart-inner"><canvas id="totalChart"></canvas></div></div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+<script>
+class DB {
+    constructor() { this.db = null; }
+    async init() {
+        return new Promise((ok, ko) => {
+            const r = indexedDB.open('CED_V22', 1);
+            r.onupgradeneeded = e => {
+                const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
+                s.createIndex('ym', 'ym', { unique: true });
+            };
+            r.onsuccess = e => { this.db = e.target.result; ok(); };
+            r.onerror = e => ko(e.target.error);
+        });
+    }
+    async save(d) {
+        const tx = this.db.transaction('ced', 'readwrite');
+        const st = tx.objectStore('ced');
+        const ex = await new Promise(r => { const q = st.index('ym').get(d.ym); q.onsuccess = () => r(q.result); });
+        if (ex) d.id = ex.id;
+        return new Promise(r => { const q = st.put(d); q.onsuccess = () => r(q.result); });
+    }
+    async all() {
+        const tx = this.db.transaction('ced', 'readonly');
+        const d = await new Promise(r => { const q = tx.objectStore('ced').getAll(); q.onsuccess = () => r(q.result); });
+        return d.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+}
+
+function contaGiorniLavorativi(text) {
+    const presIdx = text.indexOf('PRESENZE MESE DI');
+    if (presIdx < 0) return 0;
+    const calendario = text.substring(presIdx);
+    const lines = calendario.split('\n');
+    let inOrdinario = false;
+    for (const line of lines) {
+        const t = line.trim();
+        if (t === '') continue;
+        if (t.includes('ORDINARIE')) { inOrdinario = true; continue; }
+        if (inOrdinario) {
+            let clean = t.replace(/FER\s*\d{4}/g, '').replace(/ROL\s*\d{4}/g, '');
+            const matches = clean.match(/0800/g);
+            return matches ? matches.length : 0;
+        }
+    }
+    return 0;
+}
+
+function parsePage(text) {
+    const clean = s => s ? parseFloat(String(s).replace(/\./g, '').replace(',', '.')) || 0 : 0;
+    const r = { netto: null, ferieGodute: 0, ferieResidue: 0, rolGoduti: 0, rolResidui: 0 };
+    for (const p of [/NETTO\s+A\s+PAGARE\s*\n?\s*([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i, /NETTO\s+A\s+PAGARE[\s\S]{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i]) {
+        const m = text.match(p);
+        if (m && clean(m[1]) > 0) { r.netto = clean(m[1]); break; }
+    }
+    if (!r.netto) {
+        const li = text.indexOf('* LEGENDA');
+        if (li > 0) {
+            const b = text.substring(Math.max(0, li - 300), li);
+            const ns = b.match(/[\d]{1,3}(?:\.[\d]{3})*,\d{2}/g);
+            if (ns && ns.length >= 2) { const ln = clean(ns[ns.length - 1]); if (ln > 100) r.netto = ln; }
+        }
+    }
+    const fm = text.match(/Ferie\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/);
+    if (fm) { r.ferieGodute = clean(fm[3]); r.ferieResidue = clean(fm[4]); }
+    const rm = text.match(/R\.o\.l\.\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/);
+    if (rm) { r.rolGoduti = clean(rm[3]); r.rolResidui = clean(rm[4]); }
+    return r;
+}
+
+function parseBothPages(pagesText) {
+    const r = { netto: null, ferieGodute: 0, ferieResidue: 0, rolGoduti: 0, rolResidui: 0, giorniLavorativi: 0 };
+    for (let i = 0; i < pagesText.length; i++) {
+        const p = parsePage(pagesText[i]);
+        if (r.netto === null && p.netto !== null && p.netto > 0) r.netto = p.netto;
+        if (r.ferieGodute === 0 && p.ferieGodute > 0) { r.ferieGodute = p.ferieGodute; r.ferieResidue = p.ferieResidue; }
+        if (r.rolGoduti === 0 && p.rolGoduti > 0) { r.rolGoduti = p.rolGoduti; r.rolResidui = p.rolResidui; }
+        if (i === 1) r.giorniLavorativi = contaGiorniLavorativi(pagesText[i]);
+    }
+    return r;
+}
+
+class App {
+    constructor() {
+        this.db = new DB();
+        this.pdfDoc = null;
+        this.currentPage = 1;
+        this.totalPages = 0;
+        this.pagesText = [];
+        this.parsed = {};
+        this.charts = {};
+    }
+
+    async init() {
+        await this.db.init();
+        this.setupNav();
+        this.setupUpload();
+        await this.loadHome();
+    }
+
+    setupNav() {
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.addEventListener('click', async e => {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+                document.getElementById(e.target.dataset.scr)?.classList.add('active');
+                e.target.classList.add('active');
+                if (e.target.dataset.scr === 'home') await this.loadHome();
+                if (e.target.dataset.scr === 'buonipasto') await this.loadBP();
+                if (e.target.dataset.scr === 'charts') await this.loadCharts();
+            });
+        });
+    }
+
+    setupUpload() {
+        const inp = document.getElementById('pdfInput');
+        const upBox = document.getElementById('upBox');
+        upBox.addEventListener('dragover', e => e.preventDefault());
+        upBox.addEventListener('drop', async e => {
+            e.preventDefault();
+            const f = e.dataTransfer.files[0];
+            if (f?.type === 'application/pdf') await this.loadPDF(f);
+        });
+        inp.addEventListener('change', async e => { if (e.target.files[0]) await this.loadPDF(e.target.files[0]); });
+    }
+
+    async loadPDF(file) {
+        this.toast('📄 Analisi...');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buf = await file.arrayBuffer();
+        this.pdfDoc = await pdfjsLib.getDocument(new Uint8Array(buf)).promise;
+        this.totalPages = this.pdfDoc.numPages;
+        this.currentPage = 1;
+        this.pagesText = [];
+        for (let i = 1; i <= this.pdfDoc.numPages; i++) {
+            const page = await this.pdfDoc.getPage(i);
+            const c = await page.getTextContent();
+            let lastY = null, pt = '';
+            for (const it of c.items) {
+                const y = Math.round(it.transform[5]);
+                if (lastY !== null && Math.abs(y - lastY) > 8) pt += '\n';
+                else if (pt && !pt.endsWith(' ') && !pt.endsWith('\n')) pt += ' ';
+                pt += it.str;
+                lastY = y;
+            }
+            this.pagesText.push(pt);
+        }
+        this.parsed = parseBothPages(this.pagesText);
+
+        const dm = file.name.match(/-(\d{2})-(\d{4})-/);
+        if (dm) document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
+
+        this.fill('nettoInput', 'tagNetto', this.parsed.netto);
+        this.fill('ferieGInput', 'tagFerieG', this.parsed.ferieGodute);
+        this.fill('ferieRInput', 'tagFerieR', this.parsed.ferieResidue);
+        this.fill('rolGInput', 'tagRolG', this.parsed.rolGoduti);
+        this.fill('rolRInput', 'tagRolR', this.parsed.rolResidui);
+        this.fill('ggLavInput', 'tagGgLav', this.parsed.giorniLavorativi);
+
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('workSection').style.display = 'block';
+        await this.renderPage();
+        this.toast('✅ Pronto!');
+    }
+
+    fill(id, tagId, val) {
+        const inp = document.getElementById(id);
+        const tag = document.getElementById(tagId);
+        if (val > 0) {
+            inp.value = val;
+            inp.classList.add('found');
+            if (tag) { tag.textContent = 'OK'; tag.className = 'tag auto'; }
+        } else {
+            inp.value = '';
+            inp.classList.remove('found');
+            if (tag) { tag.textContent = 'MANUALE'; tag.className = 'tag manual'; }
+        }
+    }
+
+    async renderPage() {
+        if (!this.pdfDoc) return;
+        const page = await this.pdfDoc.getPage(this.currentPage);
+        const vp = page.getViewport({ scale: 1.5 });
+        const canvas = document.getElementById('pdfCanvas');
+        canvas.height = vp.height;
+        canvas.width = vp.width;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        document.getElementById('pageInfo').textContent = `${this.currentPage} / ${this.totalPages}`;
+    }
+
+    prevPage() { if (this.currentPage > 1) { this.currentPage--; this.renderPage(); } }
+    nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; this.renderPage(); } }
+
+    annulla() {
+        if (confirm('Sei sicuro? I dati non verranno salvati.')) {
+            this.pdfDoc = null;
+            this.pagesText = [];
+            document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('workSection').style.display = 'none';
+            this.toast('❌ Annullato');
+        }
+    }
+
+    async saveData() {
+        const mese = document.getElementById('meseInput').value;
+        if (!mese) return alert('⚠️ Manca il mese');
+        const d = new Date(mese + '-01');
+        const tipo = document.getElementById('tipoInput').value;
+        let meseRif = d.getMonth();
+        let annoRif = d.getFullYear();
+        if (tipo === 'tredicesima') meseRif = 11;
+        if (tipo === 'quattordicesima') meseRif = 5;
+        const dataRef = new Date(annoRif, meseRif, 1);
+        const data = {
+            ym: tipo === 'normale' ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : `EXTRA-${tipo}-${d.getFullYear()}`,
+            date: dataRef.toISOString(), competenza: dataRef.toISOString(),
+            year: d.getFullYear(), month: meseRif,
+            netto: +document.getElementById('nettoInput').value || 0,
+            ferieGodute: +document.getElementById('ferieGInput').value || 0,
+            ferieResidue: +document.getElementById('ferieRInput').value || 0,
+            rolGoduti: +document.getElementById('rolGInput').value || 0,
+            rolResidui: +document.getElementById('rolRInput').value || 0,
+            ggLav: +document.getElementById('ggLavInput').value || 0,
+            tipo: tipo
+        };
+        if (!data.netto) return alert('⚠️ Netto obbligatorio');
+        await this.db.save(data);
+        this.toast('✅ Salvato!');
+        this.pdfDoc = null; this.pagesText = [];
+        document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
+        document.getElementById('uploadSection').style.display = 'block';
+        document.getElementById('workSection').style.display = 'none';
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+        document.getElementById('home').classList.add('active');
+        document.querySelector('[data-scr="home"]').classList.add('active');
+        await this.loadHome();
+    }
+
+    async loadHome() {
+        const all = await this.db.all();
+        if (!all.length) return;
+        const last = all[all.length - 1];
+        document.getElementById('hNetto').textContent = `€${last.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
+        document.getElementById('hMese').textContent = new Date(last.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+        const tipoLabel = last.tipo === 'tredicesima' ? '🎄 Tredicesima' : last.tipo === 'quattordicesima' ? '🌴 Quattordicesima' : `Ferie: ${last.ferieGodute}gg | ROL: ${last.rolGoduti}h`;
+        document.getElementById('hDate').textContent = tipoLabel;
+        document.getElementById('hInfo').textContent = last.tipo === 'normale' ? `Lavorativi: ${last.ggLav}` : 'Cedolino extra';
+
+        const cy = new Date().getFullYear();
+        const yd = all.filter(p => p.year === cy);
+        const normali = yd.filter(p => p.tipo === 'normale');
+        const tred = yd.filter(p => p.tipo === 'tredicesima');
+        const quatt = yd.filter(p => p.tipo === 'quattordicesima');
+        const totNormali = normali.reduce((s, p) => s + p.netto, 0);
+        const totTred = tred.reduce((s, p) => s + p.netto, 0);
+        const totQuatt = quatt.reduce((s, p) => s + p.netto, 0);
+        const tot = totNormali + totTred + totQuatt;
+
+        document.getElementById('totaleNetto').textContent = `€${tot.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
+        document.getElementById('totaleMesi').textContent = `${normali.length}/12`;
+        document.getElementById('totaleInfo').innerHTML = `${normali.length} stipendi: €${totNormali.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
+
+        let badges = '';
+        if (totTred > 0) badges += `<span class="extra-badge">🎄 13ª: €${totTred.toLocaleString('it-IT',{minimumFractionDigits:2})}</span> `;
+        if (totQuatt > 0) badges += `<span class="extra-badge">🌴 14ª: €${totQuatt.toLocaleString('it-IT',{minimumFractionDigits:2})}</span>`;
+        document.getElementById('extraBadges').innerHTML = badges;
+
+        const grid = document.getElementById('monthGrid');
+        grid.innerHTML = '';
+        const mc = normali.map(p => p.month);
+        for (let i = 0; i < 12; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'month-cell ' + (mc.includes(i) ? 'filled' : 'empty');
+            cell.textContent = ['G','F','M','A','M','G','L','A','S','O','N','D'][i];
+            grid.appendChild(cell);
+        }
+
+        const lastNormale = normali.length ? normali[normali.length - 1] : last;
+        const ft = (lastNormale.ferieResidue || 0) + (lastNormale.ferieGodute || 0);
+        document.getElementById('fBar').style.width = ft>0?((lastNormale.ferieGodute||0)/ft*100)+'%':'0%';
+        document.getElementById('fGod').textContent = (lastNormale.ferieGodute||0)+' gg';
+        document.getElementById('fRes').textContent = (lastNormale.ferieResidue||0)+' gg';
+
+        const rt = (lastNormale.rolResidui || 0) + (lastNormale.rolGoduti || 0);
+        document.getElementById('rBar').style.width = rt>0?((lastNormale.rolGoduti||0)/rt*100)+'%':'0%';
+        document.getElementById('rGod').textContent = (lastNormale.rolGoduti||0)+' ore';
+        document.getElementById('rRes').textContent = (lastNormale.rolResidui||0)+' ore';
+
+        const bpTot = normali.reduce((s, p) => s + (p.ggLav || 0), 0);
+        const bpImp = bpTot * 8;
+        document.getElementById('bpPreview').innerHTML = `
+            <div class="bp-highlight">
+                <span>🍽️ ${bpTot} buoni cumulati</span>
+                <span>€${bpImp.toFixed(2)}</span>
+            </div>
+            <div style="font-size:11px; color:var(--text2); margin-top:4px;">
+                Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})
+            </div>`;
+    }
+
+    async loadBP() {
+        const all = await this.db.all();
+        const c = document.getElementById('bpContent');
+        const normali = all.filter(p => p.tipo === 'normale');
+        if (!normali.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino normale</p>'; return; }
+        let tb = 0, ti = 0, h = '';
+        for (const p of normali.reverse()) {
+            if (p.ggLav > 0) {
+                tb += p.ggLav; ti += p.ggLav * 8;
+                h += `<div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
+                    <div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div></div>`;
+            }
+        }
+        h += `<div class="prog-card" style="border:2px solid var(--orange);"><div class="bp-highlight" style="font-size:18px;"><span>🍽️ Totale</span><span>${tb} buoni = €${ti.toFixed(2)}</span></div></div>`;
+        c.innerHTML = h;
+    }
+
+    async loadCharts() {
+        const all = await this.db.all();
+        if (!all.length) return;
+        const cy = new Date().getFullYear(), py = cy - 1;
+        const dc = all.filter(p => p.year === cy), dp = all.filter(p => p.year === py);
+        document.getElementById('chartYearCurr').textContent = cy;
+        document.getElementById('chartYearPrev').textContent = py;
+        
+        const c1 = document.getElementById('compareChart')?.getContext('2d');
+        if (c1) {
+            if (this.charts.c) this.charts.c.destroy();
+            const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic','13ª','14ª'];
+            const cur = new Array(14).fill(null), prev = new Array(14).fill(null);
+            dc.forEach(p => {
+                if (p.tipo === 'tredicesima') cur[12] = (cur[12]||0) + p.netto;
+                else if (p.tipo === 'quattordicesima') cur[13] = (cur[13]||0) + p.netto;
+                else cur[p.month] = (cur[p.month]||0) + p.netto;
+            });
+            dp.forEach(p => {
+                if (p.tipo === 'tredicesima') prev[12] = (prev[12]||0) + p.netto;
+                else if (p.tipo === 'quattordicesima') prev[13] = (prev[13]||0) + p.netto;
+                else prev[p.month] = (prev[p.month]||0) + p.netto;
+            });
+            this.charts.c = new Chart(c1, {
+                type:'line',
+                data:{labels:mesi, datasets:[
+                    {label:''+cy, data:cur, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3, borderWidth:3, pointRadius:4, spanGaps:true},
+                    {label:''+py, data:prev, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3, borderWidth:2, pointRadius:4, spanGaps:true}
+                ]},
+                options:{responsive:true, maintainAspectRatio:false, scales:{y:{ticks:{callback:v=>'€'+v.toLocaleString(), color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}}, x:{ticks:{color:'#999'}}}}
+            });
+        }
+        const c2 = document.getElementById('totalChart')?.getContext('2d');
+        if (c2) {
+            if (this.charts.t) this.charts.t.destroy();
+            const years = [...new Set(all.map(p=>p.year))].sort();
+            const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto,0));
+            this.charts.t = new Chart(c2, {
+                type:'bar',
+                data:{labels:years, datasets:[{label:'Totale', data:totals, backgroundColor:years.map(y=>y===cy?'rgba(16,185,129,0.8)':'rgba(59,130,246,0.6)'), borderRadius:10}]},
+                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'€'+(v/1000).toFixed(0)+'k', color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}}, x:{ticks:{color:'#999'}}}}
+            });
+        }
+    }
+
+    toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+    }
+}
+
+let app;
+document.addEventListener('DOMContentLoaded', async () => { app = new App(); await app.init(); });
+
+// Registra Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+}
+</script>
+</body>
+</html>

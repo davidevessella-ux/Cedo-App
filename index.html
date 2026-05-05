@@ -267,15 +267,6 @@
             font-weight: 700;
             margin: 2px;
         }
-        .info-box {
-            background: rgba(245,158,11,0.1);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
-        .info-box.blue {
-            background: rgba(59,130,246,0.05);
-        }
     </style>
 </head>
 <body>
@@ -318,7 +309,7 @@
 
         <div class="prog-card"><div class="prog-head"><div class="prog-icon f">🏖️</div>Ferie</div><div class="bar"><div class="bar-fill f" id="fBar" style="width:0%"></div></div><div class="bar-info"><span>Godute: <strong id="fGod">0 gg</strong></span><span>Residue: <strong id="fRes">0 gg</strong></span></div></div>
         <div class="prog-card"><div class="prog-head"><div class="prog-icon r">⏰</div>ROL</div><div class="bar"><div class="bar-fill r" id="rBar" style="width:0%"></div></div><div class="bar-info"><span>Goduti: <strong id="rGod">0 ore</strong></span><span>Residui: <strong id="rRes">0 ore</strong></span></div></div>
-        <div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>Buoni Pasto</div><div id="bpPreview" style="font-size:13px;">Carica un cedolino</div></div>
+        <div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>Buoni Pasto (dal 2026)</div><div id="bpPreview" style="font-size:13px;">Carica un cedolino</div></div>
     </main>
 
     <!-- AGGIUNGI -->
@@ -341,7 +332,7 @@
             
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
-                <p class="form-subtitle">Solo il Netto è manuale - Il resto è automatico</p>
+                <p class="form-subtitle">Dati automatici dal PDF - Solo il Netto è manuale</p>
                 
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
@@ -354,7 +345,7 @@
 
                 <div class="form-group"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese" required></div>
                 
-                <div class="info-box">
+                <div style="background:rgba(245,158,11,0.1); border-radius:12px; padding:12px; margin-bottom:12px;">
                     <div class="form-small" style="color:var(--orange); margin-bottom:4px;">✍️ <strong>UNICO CAMPO MANUALE</strong></div>
                     <div class="form-group" style="margin:0;">
                         <label class="form-label">💰 Netto a Pagare</label>
@@ -362,7 +353,7 @@
                     </div>
                 </div>
 
-                <div class="info-box blue">
+                <div style="background:rgba(59,130,246,0.05); border-radius:12px; padding:12px; margin-bottom:12px;">
                     <div class="form-small" style="color:var(--blue); margin-bottom:4px;">📌 Mese precedente: <strong id="mesePrecLabel">--</strong></div>
                 </div>
 
@@ -403,6 +394,7 @@
                 <div class="form-group">
                     <label class="form-label">🍽️ Giorni Lavorativi <span class="tag auto">AUTO</span></label>
                     <input type="number" id="ggLavInput" class="form-input found" readonly>
+                    <span class="form-small">Solo giorni con ≥8 ore (0800)</span>
                 </div>
                 
                 <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
@@ -412,7 +404,7 @@
     </main>
 
     <!-- BUONI PASTO -->
-    <main id="buonipasto" class="screen"><h3 style="margin-bottom:16px;">🍽️ Buoni Pasto</h3><div id="bpContent"></div></main>
+    <main id="buonipasto" class="screen"><h3 style="margin-bottom:16px;">🍽️ Buoni Pasto (dal 2026)</h3><div id="bpContent"></div></main>
 
     <!-- GRAFICI -->
     <main id="charts" class="screen">
@@ -428,7 +420,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V28', 1);
+            const r = indexedDB.open('CED_V29', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -457,6 +449,7 @@ function contaGiorniLavorativi(text) {
     if (presIdx < 0) return 0;
     const calendario = text.substring(presIdx);
     const lines = calendario.split('\n');
+    let giorni = 0;
     let inOrdinario = false;
     for (const line of lines) {
         const t = line.trim();
@@ -466,17 +459,15 @@ function contaGiorniLavorativi(text) {
             let clean = t.replace(/FER\s*\d{4}/g, '').replace(/ROL\s*\d{4}/g, '');
             const codici = clean.match(/\d{4}/g);
             if (codici) {
-                let giorni = 0;
                 for (const codice of codici) {
                     const ore = parseInt(codice) / 100;
                     if (ore >= 8) giorni++;
                 }
-                return giorni;
             }
             break;
         }
     }
-    return 0;
+    return giorni;
 }
 
 function parsePage(text) {
@@ -591,13 +582,8 @@ class App {
         const nomiMesi = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
         
         let mesePrec, annoPrec;
-        if (meseCorrente === 1) {
-            mesePrec = 12;
-            annoPrec = annoCorrente - 1;
-        } else {
-            mesePrec = meseCorrente - 1;
-            annoPrec = annoCorrente;
-        }
+        if (meseCorrente === 1) { mesePrec = 12; annoPrec = annoCorrente - 1; }
+        else { mesePrec = meseCorrente - 1; annoPrec = annoCorrente; }
         
         const all = await this.db.all();
         this.cedPrec = all.find(p => {
@@ -617,25 +603,29 @@ class App {
             document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} 📝 (manuale)`;
         }
 
-        // Popola campi
+        // NETTO MANUALE
         document.getElementById('nettoInput').value = '';
         document.getElementById('nettoInput').classList.remove('found');
-        
+
+        // Ferie godute mese
         const ferieGoduteMese = this.cedPrec ? Math.max(0, (this.parsed.ferieGodute || 0) - (this.cedPrec.ferieGodute || 0)) : (this.parsed.ferieGodute || 0);
         document.getElementById('ferieGInput').value = ferieGoduteMese.toFixed(2);
         document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
-        
+
+        // ROL goduti mese
         const rolGodutiMese = this.cedPrec ? Math.max(0, (this.parsed.rolGoduti || 0) - (this.cedPrec.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
         document.getElementById('rolGInput').value = rolGodutiMese.toFixed(2);
         document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
-        
+
+        // Giorni lavorativi
         document.getElementById('ggLavInput').value = this.parsed.giorniLavorativi || '';
+
         this.calcolaResidue();
 
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
         await this.renderPage();
-        this.toast('✅ Pronto!');
+        this.toast('✅ Pronto! Inserisci il Netto');
     }
 
     calcolaResidue() {
@@ -668,9 +658,7 @@ class App {
                 ferieCheck.innerHTML = `⚠️ Differenza: ${(ferieCed - ferieCalc).toFixed(2)} gg`;
                 ferieCheck.className = 'form-small form-check-ko';
             }
-        } else {
-            ferieCheck.style.display = 'none';
-        }
+        } else { ferieCheck.style.display = 'none'; }
         
         if (rolCed > 0) {
             const diff = Math.abs(rolCalc - rolCed);
@@ -682,9 +670,7 @@ class App {
                 rolCheck.innerHTML = `⚠️ Differenza: ${(rolCed - rolCalc).toFixed(2)} ore`;
                 rolCheck.className = 'form-small form-check-ko';
             }
-        } else {
-            rolCheck.style.display = 'none';
-        }
+        } else { rolCheck.style.display = 'none'; }
     }
 
     async renderPage() {
@@ -705,9 +691,7 @@ class App {
 
     annulla() {
         if (confirm('Sei sicuro? I dati non verranno salvati.')) {
-            this.pdfDoc = null;
-            this.pagesText = [];
-            this.cedPrec = null;
+            this.pdfDoc = null; this.pagesText = []; this.cedPrec = null;
             this.lastResidue = { ferie: 0, rol: 0 };
             document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
             document.getElementById('uploadSection').style.display = 'block';
@@ -729,10 +713,8 @@ class App {
         
         const data = {
             ym: tipo === 'normale' ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : `EXTRA-${tipo}-${d.getFullYear()}`,
-            date: dataRef.toISOString(),
-            competenza: dataRef.toISOString(),
-            year: d.getFullYear(),
-            month: meseRif,
+            date: dataRef.toISOString(), competenza: dataRef.toISOString(),
+            year: d.getFullYear(), month: meseRif,
             netto: +document.getElementById('nettoInput').value || 0,
             ferieGodute: +document.getElementById('ferieGInput').value || 0,
             ferieResidue: +document.getElementById('ferieRCalc').value || 0,
@@ -745,7 +727,8 @@ class App {
         if (!data.netto) return alert('⚠️ Netto obbligatorio');
         await this.db.save(data);
         this.toast('✅ Salvato!');
-        this.pdfDoc = null; this.pagesText = []; this.cedPrec = null; this.lastResidue = { ferie: 0, rol: 0 };
+        this.pdfDoc = null; this.pagesText = []; this.cedPrec = null;
+        this.lastResidue = { ferie: 0, rol: 0 };
         document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
         document.getElementById('uploadSection').style.display = 'block';
         document.getElementById('workSection').style.display = 'none';
@@ -806,53 +789,35 @@ class App {
         document.getElementById('rGod').textContent = (lastNormale.rolGoduti||0)+' ore';
         document.getElementById('rRes').textContent = (lastNormale.rolResidui||0)+' ore';
 
-        // Buoni pasto SOLO dal 2026
-        if (cy >= 2026) {
-            const bpTot = normali.filter(p => p.year >= 2026).reduce((s, p) => s + (p.ggLav || 0), 0);
-            const bpImp = bpTot * 8;
-            document.getElementById('bpPreview').innerHTML = `
-                <div class="bp-highlight">
-                    <span>🍽️ ${bpTot} buoni cumulati</span>
-                    <span>€${bpImp.toFixed(2)}</span>
-                </div>
-                <div style="font-size:11px; color:var(--text2); margin-top:4px;">
-                    Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})
-                </div>`;
-        } else {
-            document.getElementById('bpPreview').innerHTML = `
-                <div style="text-align:center; color:var(--text2); padding:10px;">
-                    🍽️ Buoni pasto disponibili dal 2026
-                </div>`;
-        }
+        // BUONI PASTO SOLO DAL 2026
+        const bpTot = normali
+            .filter(p => p.year >= 2026)
+            .reduce((s, p) => s + (p.ggLav || 0), 0);
+        const bpImp = bpTot * 8;
+        document.getElementById('bpPreview').innerHTML = `
+            <div class="bp-highlight">
+                <span>🍽️ ${bpTot} buoni (dal 2026)</span>
+                <span>€${bpImp.toFixed(2)}</span>
+            </div>
+            <div style="font-size:11px; color:var(--text2); margin-top:4px;">
+                Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})
+            </div>`;
     }
 
     async loadBP() {
         const all = await this.db.all();
         const c = document.getElementById('bpContent');
-        const normali = all.filter(p => p.tipo === 'normale' && p.year >= 2026);
-        
-        if (!normali.length) {
-            c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">🍽️ Buoni pasto disponibili dal 2026</p>';
-            return;
-        }
-        
+        const normali = all.filter(p => (p.tipo === 'normale' || !p.tipo) && p.year >= 2026);
+        if (!normali.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino dal 2026</p>'; return; }
         let tb = 0, ti = 0, h = '';
         for (const p of normali.reverse()) {
             if (p.ggLav > 0) {
-                tb += p.ggLav;
-                ti += p.ggLav * 8;
-                h += `<div class="prog-card">
-                    <div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
-                    <div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div>
-                </div>`;
+                tb += p.ggLav; ti += p.ggLav * 8;
+                h += `<div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
+                    <div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div></div>`;
             }
         }
-        h += `<div class="prog-card" style="border:2px solid var(--orange);">
-            <div class="bp-highlight" style="font-size:18px;">
-                <span>🍽️ Totale dal 2026</span>
-                <span>${tb} buoni = €${ti.toFixed(2)}</span>
-            </div>
-        </div>`;
+        h += `<div class="prog-card" style="border:2px solid var(--orange);"><div class="bp-highlight" style="font-size:18px;"><span>🍽️ Totale</span><span>${tb} buoni = €${ti.toFixed(2)}</span></div></div>`;
         c.innerHTML = h;
     }
 
@@ -901,6 +866,7 @@ class App {
         }
     }
 
+    // ======================== BACKUP ========================
     async esportaDB() {
         const all = await this.db.all();
         const backup = { versione: '1.0', data: new Date().toISOString(), cedolini: all };

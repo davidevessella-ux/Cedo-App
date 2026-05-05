@@ -332,7 +332,7 @@
             
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
-                <p class="form-subtitle">Residue calcolate automaticamente</p>
+                <p class="form-subtitle">Residue calcolate dal mese precedente</p>
                 
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
@@ -346,6 +346,10 @@
                 <div class="form-group"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese" required></div>
                 <div class="form-group"><label class="form-label">💰 Netto a Pagare <span class="tag" id="tagNetto">--</span></label><input type="number" id="nettoInput" class="form-input" step="0.01" required></div>
                 
+                <div style="background:rgba(59,130,246,0.05); border-radius:12px; padding:12px; margin-bottom:12px;">
+                    <div class="form-small" style="color:var(--blue); margin-bottom:4px;">📌 Mese precedente: <strong id="mesePrecLabel">--</strong></div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">🏖️ Ferie GODUTE questo mese <span class="tag" id="tagFerieG">--</span></label>
                     <input type="number" id="ferieGInput" class="form-input" step="0.01" placeholder="Giorni di ferie fatti" oninput="app.calcolaResidue()">
@@ -405,7 +409,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V26', 1);
+            const r = indexedDB.open('CED_V27', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -425,11 +429,6 @@ class DB {
         const tx = this.db.transaction('ced', 'readonly');
         const d = await new Promise(r => { const q = tx.objectStore('ced').getAll(); q.onsuccess = () => r(q.result); });
         return d.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-    async getLastNormale() {
-        const all = await this.all();
-        const normali = all.filter(p => p.tipo === 'normale' || !p.tipo);
-        return normali.length > 0 ? normali[normali.length - 1] : null;
     }
 }
 
@@ -469,15 +468,9 @@ function parsePage(text) {
         }
     }
     const fm = text.match(/Ferie\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/);
-    if (fm) {
-        r.ferieGodute = clean(fm[3]);
-        r.ferieResidue = clean(fm[4]);
-    }
+    if (fm) { r.ferieGodute = clean(fm[3]); r.ferieResidue = clean(fm[4]); }
     const rm = text.match(/R\.o\.l\.\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/);
-    if (rm) {
-        r.rolGoduti = clean(rm[3]);
-        r.rolResidui = clean(rm[4]);
-    }
+    if (rm) { r.rolGoduti = clean(rm[3]); r.rolResidui = clean(rm[4]); }
     return r;
 }
 
@@ -504,6 +497,7 @@ class App {
         this.parsed = {};
         this.charts = {};
         this.lastResidue = { ferie: 0, rol: 0 };
+        this.cedPrec = null;
     }
 
     async init() {
@@ -565,31 +559,50 @@ class App {
         const dm = file.name.match(/-(\d{2})-(\d{4})-/);
         if (dm) document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
 
-        // Carica ultimo cedolino per calcolo residue
-        const lastNormale = await this.db.getLastNormale();
-        if (lastNormale) {
-            this.lastResidue.ferie = lastNormale.ferieResidue || 0;
-            this.lastResidue.rol = lastNormale.rolResidui || 0;
+        // === LOGICA MESE PRECEDENTE ===
+        const meseCorrente = parseInt(dm[1]);
+        const annoCorrente = parseInt(dm[2]);
+        const nomiMesi = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+        
+        let mesePrec, annoPrec;
+        if (meseCorrente === 1) {
+            mesePrec = 12;
+            annoPrec = annoCorrente - 1;
         } else {
-            this.lastResidue.ferie = 0;
-            this.lastResidue.rol = 0;
+            mesePrec = meseCorrente - 1;
+            annoPrec = annoCorrente;
+        }
+        
+        const all = await this.db.all();
+        this.cedPrec = all.find(p => {
+            const d = new Date(p.date);
+            return d.getFullYear() === annoPrec && d.getMonth() === (mesePrec - 1) && (!p.tipo || p.tipo === 'normale');
+        });
+        
+        if (this.cedPrec) {
+            this.lastResidue.ferie = this.cedPrec.ferieResidue || 0;
+            this.lastResidue.rol = this.cedPrec.rolResidui || 0;
+            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} ✅ (trovato)`;
+        } else {
+            const ferieMan = prompt(`📅 Non trovo ${nomiMesi[mesePrec]} ${annoPrec}.\n\nInserisci le FERIE RESIDUE di ${nomiMesi[mesePrec]}:`, '0');
+            const rolMan = prompt(`⏰ Inserisci i ROL RESIDUI di ${nomiMesi[mesePrec]}:`, '0');
+            this.lastResidue.ferie = parseFloat(ferieMan) || 0;
+            this.lastResidue.rol = parseFloat(rolMan) || 0;
+            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} 📝 (manuale)`;
         }
 
+        // Popola i campi
         this.fill('nettoInput', 'tagNetto', this.parsed.netto);
         
-        // Ferie godute: differenza tra godute cumulative e mese precedente
-        const ferieGoduteMese = lastNormale ? Math.max(0, (this.parsed.ferieGodute || 0) - (lastNormale.ferieGodute || 0)) : (this.parsed.ferieGodute || 0);
+        const ferieGoduteMese = this.cedPrec ? Math.max(0, (this.parsed.ferieGodute || 0) - (this.cedPrec.ferieGodute || 0)) : (this.parsed.ferieGodute || 0);
         this.fill('ferieGInput', 'tagFerieG', ferieGoduteMese);
         document.getElementById('ferieRInput').value = this.parsed.ferieResidue || '';
         
-        // ROL goduti: differenza tra goduti cumulative e mese precedente
-        const rolGodutiMese = lastNormale ? Math.max(0, (this.parsed.rolGoduti || 0) - (lastNormale.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
+        const rolGodutiMese = this.cedPrec ? Math.max(0, (this.parsed.rolGoduti || 0) - (this.cedPrec.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
         this.fill('rolGInput', 'tagRolG', rolGodutiMese);
         document.getElementById('rolRInput').value = this.parsed.rolResidui || '';
 
         this.fill('ggLavInput', 'tagGgLav', this.parsed.giorniLavorativi);
-
-        // Calcola le residue
         this.calcolaResidue();
 
         document.getElementById('uploadSection').style.display = 'none';
@@ -626,7 +639,6 @@ class App {
         document.getElementById('ferieFormula').textContent = `${ferieResiduePrec.toFixed(2)} - ${ferieGodute} = ${ferieCalc.toFixed(2)}`;
         document.getElementById('rolFormula').textContent = `${rolResiduiPrec.toFixed(2)} - ${rolGoduti} = ${rolCalc.toFixed(2)}`;
         
-        // Controllo
         const ferieCed = +document.getElementById('ferieRInput').value || 0;
         const rolCed = +document.getElementById('rolRInput').value || 0;
         
@@ -682,6 +694,8 @@ class App {
         if (confirm('Sei sicuro? I dati non verranno salvati.')) {
             this.pdfDoc = null;
             this.pagesText = [];
+            this.cedPrec = null;
+            this.lastResidue = { ferie: 0, rol: 0 };
             document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
             document.getElementById('uploadSection').style.display = 'block';
             document.getElementById('workSection').style.display = 'none';
@@ -718,7 +732,7 @@ class App {
         if (!data.netto) return alert('⚠️ Netto obbligatorio');
         await this.db.save(data);
         this.toast('✅ Salvato!');
-        this.pdfDoc = null; this.pagesText = [];
+        this.pdfDoc = null; this.pagesText = []; this.cedPrec = null; this.lastResidue = { ferie: 0, rol: 0 };
         document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
         document.getElementById('uploadSection').style.display = 'block';
         document.getElementById('workSection').style.display = 'none';

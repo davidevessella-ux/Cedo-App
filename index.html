@@ -267,6 +267,15 @@
             font-weight: 700;
             margin: 2px;
         }
+        .info-box {
+            background: rgba(245,158,11,0.1);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .info-box.blue {
+            background: rgba(59,130,246,0.05);
+        }
     </style>
 </head>
 <body>
@@ -309,7 +318,7 @@
 
         <div class="prog-card"><div class="prog-head"><div class="prog-icon f">🏖️</div>Ferie</div><div class="bar"><div class="bar-fill f" id="fBar" style="width:0%"></div></div><div class="bar-info"><span>Godute: <strong id="fGod">0 gg</strong></span><span>Residue: <strong id="fRes">0 gg</strong></span></div></div>
         <div class="prog-card"><div class="prog-head"><div class="prog-icon r">⏰</div>ROL</div><div class="bar"><div class="bar-fill r" id="rBar" style="width:0%"></div></div><div class="bar-info"><span>Goduti: <strong id="rGod">0 ore</strong></span><span>Residui: <strong id="rRes">0 ore</strong></span></div></div>
-        <div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>Buoni Pasto Cumulati</div><div id="bpPreview" style="font-size:13px;">Carica un cedolino</div></div>
+        <div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>Buoni Pasto</div><div id="bpPreview" style="font-size:13px;">Carica un cedolino</div></div>
     </main>
 
     <!-- AGGIUNGI -->
@@ -332,7 +341,7 @@
             
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
-                <p class="form-subtitle">Residue calcolate dal mese precedente</p>
+                <p class="form-subtitle">Solo il Netto è manuale - Il resto è automatico</p>
                 
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
@@ -344,15 +353,22 @@
                 </div>
 
                 <div class="form-group"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese" required></div>
-                <div class="form-group"><label class="form-label">💰 Netto a Pagare <span class="tag" id="tagNetto">--</span></label><input type="number" id="nettoInput" class="form-input" step="0.01" required></div>
                 
-                <div style="background:rgba(59,130,246,0.05); border-radius:12px; padding:12px; margin-bottom:12px;">
+                <div class="info-box">
+                    <div class="form-small" style="color:var(--orange); margin-bottom:4px;">✍️ <strong>UNICO CAMPO MANUALE</strong></div>
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">💰 Netto a Pagare</label>
+                        <input type="number" id="nettoInput" class="form-input" step="0.01" required placeholder="Inserisci il netto dal cedolino">
+                    </div>
+                </div>
+
+                <div class="info-box blue">
                     <div class="form-small" style="color:var(--blue); margin-bottom:4px;">📌 Mese precedente: <strong id="mesePrecLabel">--</strong></div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">🏖️ Ferie GODUTE questo mese <span class="tag" id="tagFerieG">--</span></label>
-                    <input type="number" id="ferieGInput" class="form-input" step="0.01" placeholder="Giorni di ferie fatti" oninput="app.calcolaResidue()">
+                    <label class="form-label">🏖️ Ferie GODUTE questo mese <span class="tag auto">AUTO</span></label>
+                    <input type="number" id="ferieGInput" class="form-input found" readonly>
                 </div>
 
                 <div class="form-group">
@@ -362,14 +378,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">🏖️ Ferie RESIDUE (da cedolino)</label>
-                    <input type="number" id="ferieRInput" class="form-input" step="0.01" placeholder="Leggi dal cedolino" oninput="app.calcolaResidue()">
+                    <label class="form-label">🏖️ Ferie RESIDUE (da cedolino) <span class="tag auto">AUTO</span></label>
+                    <input type="number" id="ferieRInput" class="form-input found" readonly>
                     <span class="form-small" id="ferieCheck"></span>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">⏰ ROL GODUTI questo mese <span class="tag" id="tagRolG">--</span></label>
-                    <input type="number" id="rolGInput" class="form-input" step="0.01" placeholder="Ore di ROL fatte" oninput="app.calcolaResidue()">
+                    <label class="form-label">⏰ ROL GODUTI questo mese <span class="tag auto">AUTO</span></label>
+                    <input type="number" id="rolGInput" class="form-input found" readonly>
                 </div>
 
                 <div class="form-group">
@@ -379,12 +395,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">⏰ ROL RESIDUI (da cedolino)</label>
-                    <input type="number" id="rolRInput" class="form-input" step="0.01" placeholder="Leggi dal cedolino" oninput="app.calcolaResidue()">
+                    <label class="form-label">⏰ ROL RESIDUI (da cedolino) <span class="tag auto">AUTO</span></label>
+                    <input type="number" id="rolRInput" class="form-input found" readonly>
                     <span class="form-small" id="rolCheck"></span>
                 </div>
 
-                <div class="form-group"><label class="form-label">🍽️ Giorni Lavorativi <span class="tag" id="tagGgLav">--</span></label><input type="number" id="ggLavInput" class="form-input" step="1" placeholder="Auto da calendario"></div>
+                <div class="form-group">
+                    <label class="form-label">🍽️ Giorni Lavorativi <span class="tag auto">AUTO</span></label>
+                    <input type="number" id="ggLavInput" class="form-input found" readonly>
+                </div>
                 
                 <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
                 <button class="btn-outline" onclick="app.annulla()" style="margin-top:8px;">❌ Annulla</button>
@@ -409,7 +428,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V27', 1);
+            const r = indexedDB.open('CED_V28', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -445,8 +464,16 @@ function contaGiorniLavorativi(text) {
         if (t.includes('ORDINARIE')) { inOrdinario = true; continue; }
         if (inOrdinario) {
             let clean = t.replace(/FER\s*\d{4}/g, '').replace(/ROL\s*\d{4}/g, '');
-            const matches = clean.match(/0800/g);
-            return matches ? matches.length : 0;
+            const codici = clean.match(/\d{4}/g);
+            if (codici) {
+                let giorni = 0;
+                for (const codice of codici) {
+                    const ore = parseInt(codice) / 100;
+                    if (ore >= 8) giorni++;
+                }
+                return giorni;
+            }
+            break;
         }
     }
     return 0;
@@ -559,7 +586,6 @@ class App {
         const dm = file.name.match(/-(\d{2})-(\d{4})-/);
         if (dm) document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
 
-        // === LOGICA MESE PRECEDENTE ===
         const meseCorrente = parseInt(dm[1]);
         const annoCorrente = parseInt(dm[2]);
         const nomiMesi = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -591,38 +617,25 @@ class App {
             document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} 📝 (manuale)`;
         }
 
-        // Popola i campi
-        this.fill('nettoInput', 'tagNetto', this.parsed.netto);
+        // Popola campi
+        document.getElementById('nettoInput').value = '';
+        document.getElementById('nettoInput').classList.remove('found');
         
         const ferieGoduteMese = this.cedPrec ? Math.max(0, (this.parsed.ferieGodute || 0) - (this.cedPrec.ferieGodute || 0)) : (this.parsed.ferieGodute || 0);
-        this.fill('ferieGInput', 'tagFerieG', ferieGoduteMese);
-        document.getElementById('ferieRInput').value = this.parsed.ferieResidue || '';
+        document.getElementById('ferieGInput').value = ferieGoduteMese.toFixed(2);
+        document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
         
         const rolGodutiMese = this.cedPrec ? Math.max(0, (this.parsed.rolGoduti || 0) - (this.cedPrec.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
-        this.fill('rolGInput', 'tagRolG', rolGodutiMese);
-        document.getElementById('rolRInput').value = this.parsed.rolResidui || '';
-
-        this.fill('ggLavInput', 'tagGgLav', this.parsed.giorniLavorativi);
+        document.getElementById('rolGInput').value = rolGodutiMese.toFixed(2);
+        document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
+        
+        document.getElementById('ggLavInput').value = this.parsed.giorniLavorativi || '';
         this.calcolaResidue();
 
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
         await this.renderPage();
         this.toast('✅ Pronto!');
-    }
-
-    fill(id, tagId, val) {
-        const inp = document.getElementById(id);
-        const tag = document.getElementById(tagId);
-        if (val > 0) {
-            inp.value = val;
-            inp.classList.add('found');
-            if (tag) { tag.textContent = 'OK'; tag.className = 'tag auto'; }
-        } else {
-            inp.value = '';
-            inp.classList.remove('found');
-            if (tag) { tag.textContent = 'MANUALE'; tag.className = 'tag manual'; }
-        }
     }
 
     calcolaResidue() {
@@ -793,32 +806,53 @@ class App {
         document.getElementById('rGod').textContent = (lastNormale.rolGoduti||0)+' ore';
         document.getElementById('rRes').textContent = (lastNormale.rolResidui||0)+' ore';
 
-        const bpTot = normali.reduce((s, p) => s + (p.ggLav || 0), 0);
-        const bpImp = bpTot * 8;
-        document.getElementById('bpPreview').innerHTML = `
-            <div class="bp-highlight">
-                <span>🍽️ ${bpTot} buoni cumulati</span>
-                <span>€${bpImp.toFixed(2)}</span>
-            </div>
-            <div style="font-size:11px; color:var(--text2); margin-top:4px;">
-                Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})
-            </div>`;
+        // Buoni pasto SOLO dal 2026
+        if (cy >= 2026) {
+            const bpTot = normali.filter(p => p.year >= 2026).reduce((s, p) => s + (p.ggLav || 0), 0);
+            const bpImp = bpTot * 8;
+            document.getElementById('bpPreview').innerHTML = `
+                <div class="bp-highlight">
+                    <span>🍽️ ${bpTot} buoni cumulati</span>
+                    <span>€${bpImp.toFixed(2)}</span>
+                </div>
+                <div style="font-size:11px; color:var(--text2); margin-top:4px;">
+                    Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})
+                </div>`;
+        } else {
+            document.getElementById('bpPreview').innerHTML = `
+                <div style="text-align:center; color:var(--text2); padding:10px;">
+                    🍽️ Buoni pasto disponibili dal 2026
+                </div>`;
+        }
     }
 
     async loadBP() {
         const all = await this.db.all();
         const c = document.getElementById('bpContent');
-        const normali = all.filter(p => p.tipo === 'normale');
-        if (!normali.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino normale</p>'; return; }
+        const normali = all.filter(p => p.tipo === 'normale' && p.year >= 2026);
+        
+        if (!normali.length) {
+            c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">🍽️ Buoni pasto disponibili dal 2026</p>';
+            return;
+        }
+        
         let tb = 0, ti = 0, h = '';
         for (const p of normali.reverse()) {
             if (p.ggLav > 0) {
-                tb += p.ggLav; ti += p.ggLav * 8;
-                h += `<div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
-                    <div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div></div>`;
+                tb += p.ggLav;
+                ti += p.ggLav * 8;
+                h += `<div class="prog-card">
+                    <div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
+                    <div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div>
+                </div>`;
             }
         }
-        h += `<div class="prog-card" style="border:2px solid var(--orange);"><div class="bp-highlight" style="font-size:18px;"><span>🍽️ Totale</span><span>${tb} buoni = €${ti.toFixed(2)}</span></div></div>`;
+        h += `<div class="prog-card" style="border:2px solid var(--orange);">
+            <div class="bp-highlight" style="font-size:18px;">
+                <span>🍽️ Totale dal 2026</span>
+                <span>${tb} buoni = €${ti.toFixed(2)}</span>
+            </div>
+        </div>`;
         c.innerHTML = h;
     }
 
@@ -867,7 +901,6 @@ class App {
         }
     }
 
-    // ======================== BACKUP ========================
     async esportaDB() {
         const all = await this.db.all();
         const backup = { versione: '1.0', data: new Date().toISOString(), cedolini: all };

@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Cedolini Pro">
     <meta name="theme-color" content="#0A0A0A">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>Cedolini Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -145,16 +145,16 @@
         .btn-green { background: var(--green); color: #fff; width: 100%; padding: 16px; font-size: 16px; }
         .btn-outline {
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             background: transparent;
             border: 1px solid rgba(255,255,255,0.2);
             color: var(--text);
             border-radius: 12px;
             font-weight: 700;
-            font-size: 15px;
+            font-size: 12px;
             cursor: pointer;
             font-family: inherit;
-            margin-top: 8px;
+            margin:0;
         }
         .btn:active { transform: scale(0.96); }
         .btn-outline:active { transform: scale(0.96); }
@@ -163,18 +163,35 @@
             border-radius: var(--radius);
             overflow: auto;
             margin-bottom: 12px;
-            max-height: 60vh;
+            max-height: 40vh;
             -webkit-overflow-scrolling: touch;
+            width: 100%;
         }
         .pdf-box canvas {
             display: block;
-            width: auto;
-            min-width: 100%;
+            width: 100%;
             height: auto;
+            max-width: 100%;
         }
-        .pdf-nav { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: #111; }
-        .pdf-nav button { padding: 8px 16px; background: var(--blue); border: none; border-radius: 8px; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
-        .pdf-nav span { font-size: 13px; color: var(--text2); }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .page-nav button {
+            padding: 10px 18px;
+            background: var(--blue);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .page-nav button:disabled { opacity: 0.4; }
+        .page-nav span { font-size: 14px; color: var(--text2); font-weight: 600; }
         .form-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
         .form-card h3 { font-size: 16px; margin-bottom: 4px; }
         .form-subtitle { font-size: 11px; color: var(--text2); margin-bottom: 12px; }
@@ -256,6 +273,12 @@
     </header>
 
     <main id="home" class="screen active">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button class="btn-outline" onclick="app.esportaDB()" style="flex:1;">📤 Backup</button>
+            <button class="btn-outline" onclick="document.getElementById('importDB').click()" style="flex:1;">📥 Ripristina</button>
+            <input type="file" id="importDB" accept=".json" hidden onchange="app.importaDB(event)">
+        </div>
+
         <div class="cards">
             <div class="card"><div class="lbl">💰 Ultimo Netto</div><div class="val g" id="hNetto">€0</div><div class="sub" id="hDate">--</div></div>
             <div class="card"><div class="lbl">📅 Competenza</div><div class="val b" id="hMese">--</div><div class="sub" id="hInfo">--</div></div>
@@ -288,8 +311,13 @@
         </div>
 
         <div id="workSection" style="display:none;">
-            <div class="pdf-box"><canvas id="pdfCanvas"></canvas>
-                <div class="pdf-nav"><button onclick="app.prevPage()">◀ Pag 1</button><span id="pageInfo">1/2</span><button onclick="app.nextPage()">Pag 2 ▶</button></div>
+            <div class="page-nav">
+                <button onclick="app.prevPage()" id="prevBtn">◀ Pag 1</button>
+                <span id="pageInfo">1 / 2</span>
+                <button onclick="app.nextPage()" id="nextBtn">Pag 2 ▶</button>
+            </div>
+            <div class="pdf-box">
+                <canvas id="pdfCanvas"></canvas>
             </div>
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3><p class="form-subtitle">Controlla e correggi se necessario</p>
@@ -311,7 +339,7 @@
                 <div class="form-group"><label class="form-label">⏰ ROL RESIDUI <span class="tag" id="tagRolR">--</span></label><input type="number" id="rolRInput" class="form-input" step="0.01"></div>
                 <div class="form-group"><label class="form-label">🍽️ Giorni Lavorativi <span class="tag" id="tagGgLav">--</span></label><input type="number" id="ggLavInput" class="form-input" step="1" placeholder="Auto da calendario"></div>
                 <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
-                <button class="btn-outline" onclick="app.annulla()">❌ Annulla</button>
+                <button class="btn-outline" onclick="app.annulla()" style="margin-top:8px; width:100%;">❌ Annulla</button>
             </div>
         </div>
     </main>
@@ -326,11 +354,12 @@
     <div class="toast" id="toast"></div>
 
 <script>
+// ======================== DATABASE ========================
 class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V23', 1);
+            const r = indexedDB.open('CED_V25', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -353,6 +382,7 @@ class DB {
     }
 }
 
+// ======================== FUNZIONI ========================
 function contaGiorniLavorativi(text) {
     const presIdx = text.indexOf('PRESENZE MESE DI');
     if (presIdx < 0) return 0;
@@ -406,6 +436,7 @@ function parseBothPages(pagesText) {
     return r;
 }
 
+// ======================== APP ========================
 class App {
     constructor() {
         this.db = new DB();
@@ -512,6 +543,8 @@ class App {
         canvas.width = vp.width;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
         document.getElementById('pageInfo').textContent = `${this.currentPage} / ${this.totalPages}`;
+        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
+        document.getElementById('nextBtn').disabled = this.currentPage >= this.totalPages;
     }
 
     prevPage() { if (this.currentPage > 1) { this.currentPage--; this.renderPage(); } }
@@ -688,6 +721,38 @@ class App {
         }
     }
 
+    // ======================== BACKUP ========================
+    async esportaDB() {
+        const all = await this.db.all();
+        const backup = { versione: '1.0', data: new Date().toISOString(), cedolini: all };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cedolini-backup-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.toast('✅ Backup esportato!');
+    }
+
+    async importaDB(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const backup = JSON.parse(text);
+            if (!backup.cedolini || !Array.isArray(backup.cedolini)) throw new Error('Formato non valido');
+            if (confirm(`Importare ${backup.cedolini.length} cedolini? I dati esistenti verranno uniti.`)) {
+                for (const ced of backup.cedolini) { await this.db.save(ced); }
+                this.toast(`✅ Importati ${backup.cedolini.length} cedolini!`);
+                await this.loadHome();
+            }
+        } catch (err) {
+            alert('❌ File non valido. Carica un file .json di backup.');
+        }
+        event.target.value = '';
+    }
+
     toast(msg) {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -698,12 +763,6 @@ class App {
 
 let app;
 document.addEventListener('DOMContentLoaded', async () => { app = new App(); await app.init(); });
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
-}
 </script>
 </body>
 </html>

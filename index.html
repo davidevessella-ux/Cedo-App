@@ -55,7 +55,14 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 18px;
         }
+        .header-title { display: flex; align-items: baseline; gap: 6px; }
         .header h1 { font-size: 20px; font-weight: 700; }
+        .version {
+            font-size: 9px;
+            color: var(--text2);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
         .header-nav { margin-left: auto; display: flex; gap: 4px; overflow-x: auto; }
         .nav-btn {
             padding: 7px 12px;
@@ -224,9 +231,6 @@
             cursor: pointer;
         }
         .form-select:focus { outline: none; border-color: var(--blue); }
-        .form-small { font-size: 11px; color: var(--text2); margin-top: 2px; display: block; }
-        .form-check-ok { color: var(--green); font-weight: 700; font-size: 12px; }
-        .form-check-ko { color: var(--red); font-weight: 700; font-size: 12px; }
         .chart-box { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
         .chart-box h3 { font-size: 14px; margin-bottom: 10px; }
         .chart-inner { height: 250px; }
@@ -297,24 +301,16 @@
             font-weight: 700;
             margin-bottom: 8px;
         }
-        .check-box {
-            margin-top: 8px;
-            padding: 8px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-        }
-        .check-box .title {
-            color: var(--text2);
-            font-size: 10px;
-            margin-bottom: 4px;
-        }
     </style>
 </head>
 <body>
 
     <header class="header">
         <div class="logo">💎</div>
-        <h1>Cedolini Pro</h1>
+        <div class="header-title">
+            <h1>Cedolini Pro</h1>
+            <span class="version">Beta 0.0</span>
+        </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
             <button class="nav-btn" data-scr="add">+ Nuovo</button>
@@ -404,11 +400,6 @@
                         <div><div class="item-label">⏰ ROL Residui</div><div class="item-value" id="showRolR">--</div></div>
                         <div><div class="item-label">🍽️ Giorni Lavorativi</div><div class="item-value" id="showGgLav">--</div></div>
                     </div>
-                    <div class="check-box">
-                        <div class="title">🔍 Controllo Residue</div>
-                        <div id="ferieCheck"></div>
-                        <div id="rolCheck"></div>
-                    </div>
                 </div>
 
                 <input type="hidden" id="ferieGInput">
@@ -442,7 +433,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V31', 1);
+            const r = indexedDB.open('CED_V32', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -473,33 +464,37 @@ function contaGiorniLavorativi(text) {
     const calendario = text.substring(presIdx);
     const lines = calendario.split('\n');
     let giorni = 0;
-    let inOrdinario = false;
+    let foundOrdinario = false;
     
     for (const line of lines) {
         const t = line.trim();
         if (t === '') continue;
         
+        if (t.includes('D L M M G V S')) continue;
+        if (t.includes('PRESENZE')) continue;
+        if (t.includes('Ore Lavoro')) continue;
+        if (t.includes('Effettuate')) continue;
+        if (t.includes('Causale')) continue;
+        if (t.includes('Assenze')) continue;
+        if (t.includes('SUPPLEMENTARI')) continue;
+        if (t.includes('STRAORDINARIE')) continue;
+        
         if (t.includes('ORDINARIE')) {
-            inOrdinario = true;
+            foundOrdinario = true;
             continue;
         }
         
-        if (inOrdinario) {
-            // Rimuovi TUTTI i prefissi di 3 lettere seguiti da 4 cifre (FER, ROL, MAL, ecc.)
-            let clean = t.replace(/[A-Z]{3}\s*\d{4}/g, '');
+        if (foundOrdinario) {
+            let clean = t.replace(/(?:FER|ROL|MAL|MUT|INF|DON|STU|CIG|ASP)\s*\d{4}/gi, '');
+            clean = clean.replace(/(?:FER|ROL|MAL)\d{4}/gi, '');
             
-            // Trova tutti i codici di 4 cifre rimasti (solo ore ordinarie)
             const codici = clean.match(/\d{4}/g);
             if (codici) {
                 for (const codice of codici) {
                     const ore = parseInt(codice) / 100;
-                    // Giorno lavorativo se >= 6 ore
-                    if (ore >= 6) {
-                        giorni++;
-                    }
+                    if (ore >= 6) giorni++;
                 }
             }
-            break;
         }
     }
     
@@ -650,6 +645,9 @@ class App {
         document.getElementById('rolGInput').value = rolGodutiMese.toFixed(2);
         document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
         document.getElementById('ggLavInput').value = this.parsed.giorniLavorativi || '';
+        
+        document.getElementById('ferieRCalc').value = Math.max(0, this.lastResidue.ferie - ferieGoduteMese).toFixed(2);
+        document.getElementById('rolRCalc').value = Math.max(0, this.lastResidue.rol - rolGodutiMese).toFixed(2);
 
         document.getElementById('showFerieG').textContent = ferieGoduteMese.toFixed(2) + ' gg';
         document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
@@ -657,53 +655,10 @@ class App {
         document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
         document.getElementById('showGgLav').textContent = (this.parsed.giorniLavorativi || 0) + ' gg (≥6h)';
 
-        setTimeout(() => this.calcolaResidue(), 100);
-
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
         await this.renderPage();
         this.toast('✅ Pronto! Inserisci il Netto');
-    }
-
-    calcolaResidue() {
-        const ferieGodute = +document.getElementById('ferieGInput').value || 0;
-        const rolGoduti = +document.getElementById('rolGInput').value || 0;
-        const ferieResiduePrec = this.lastResidue.ferie;
-        const rolResiduiPrec = this.lastResidue.rol;
-        
-        const ferieCalc = Math.max(0, ferieResiduePrec - ferieGodute);
-        const rolCalc = Math.max(0, rolResiduiPrec - rolGoduti);
-        
-        document.getElementById('ferieRCalc').value = ferieCalc.toFixed(2);
-        document.getElementById('rolRCalc').value = rolCalc.toFixed(2);
-        
-        const ferieCed = +document.getElementById('ferieRInput').value || 0;
-        const rolCed = +document.getElementById('rolRInput').value || 0;
-        
-        const ferieCheck = document.getElementById('ferieCheck');
-        const rolCheck = document.getElementById('rolCheck');
-        
-        if (ferieCed > 0) {
-            const diff = Math.abs(ferieCalc - ferieCed);
-            if (diff < 0.1) {
-                ferieCheck.innerHTML = '✅ Ferie: Corretto!';
-                ferieCheck.className = 'form-check-ok';
-            } else {
-                ferieCheck.innerHTML = `⚠️ Ferie: Differenza di ${(ferieCed - ferieCalc).toFixed(2)} gg`;
-                ferieCheck.className = 'form-check-ko';
-            }
-        } else { ferieCheck.innerHTML = ''; }
-        
-        if (rolCed > 0) {
-            const diff = Math.abs(rolCalc - rolCed);
-            if (diff < 0.1) {
-                rolCheck.innerHTML = '✅ ROL: Corretto!';
-                rolCheck.className = 'form-check-ok';
-            } else {
-                rolCheck.innerHTML = `⚠️ ROL: Differenza di ${(rolCed - rolCalc).toFixed(2)} ore`;
-                rolCheck.className = 'form-check-ko';
-            }
-        } else { rolCheck.innerHTML = ''; }
     }
 
     async renderPage() {

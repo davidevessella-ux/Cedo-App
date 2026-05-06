@@ -198,9 +198,6 @@
         .form-subtitle { font-size: 11px; color: var(--text2); margin-bottom: 12px; }
         .form-group { margin-bottom: 10px; }
         .form-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 4px; }
-        .tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
-        .tag.auto { background: rgba(16,185,129,0.2); color: var(--green); }
-        .tag.manual { background: rgba(245,158,11,0.2); color: var(--orange); }
         .form-input {
             width: 100%;
             padding: 14px;
@@ -213,9 +210,7 @@
             font-weight: 600;
         }
         .form-input:focus { outline: none; border-color: var(--blue); }
-        .form-input.found { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.08); color: var(--green); }
         .form-input.mese { color: var(--blue); font-size: 16px; }
-        .form-input[readonly] { opacity: 0.7; background: #0a0a0a; }
         .form-select {
             width: 100%;
             padding: 14px;
@@ -230,8 +225,8 @@
         }
         .form-select:focus { outline: none; border-color: var(--blue); }
         .form-small { font-size: 11px; color: var(--text2); margin-top: 2px; display: block; }
-        .form-check-ok { color: var(--green); font-weight: 700; }
-        .form-check-ko { color: var(--red); font-weight: 700; }
+        .form-check-ok { color: var(--green); font-weight: 700; font-size: 12px; }
+        .form-check-ko { color: var(--red); font-weight: 700; font-size: 12px; }
         .chart-box { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
         .chart-box h3 { font-size: 14px; margin-bottom: 10px; }
         .chart-inner { height: 250px; }
@@ -411,8 +406,8 @@
                     </div>
                     <div class="check-box">
                         <div class="title">🔍 Controllo Residue</div>
-                        <div id="ferieCheck" style="font-size:12px;"></div>
-                        <div id="rolCheck" style="font-size:12px;"></div>
+                        <div id="ferieCheck"></div>
+                        <div id="rolCheck"></div>
                     </div>
                 </div>
 
@@ -447,7 +442,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V30', 1);
+            const r = indexedDB.open('CED_V31', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -474,26 +469,40 @@ class DB {
 function contaGiorniLavorativi(text) {
     const presIdx = text.indexOf('PRESENZE MESE DI');
     if (presIdx < 0) return 0;
+    
     const calendario = text.substring(presIdx);
     const lines = calendario.split('\n');
     let giorni = 0;
     let inOrdinario = false;
+    
     for (const line of lines) {
         const t = line.trim();
         if (t === '') continue;
-        if (t.includes('ORDINARIE')) { inOrdinario = true; continue; }
+        
+        if (t.includes('ORDINARIE')) {
+            inOrdinario = true;
+            continue;
+        }
+        
         if (inOrdinario) {
-            let clean = t.replace(/FER\s*\d{4}/g, '').replace(/ROL\s*\d{4}/g, '');
+            // Rimuovi TUTTI i prefissi di 3 lettere seguiti da 4 cifre (FER, ROL, MAL, ecc.)
+            let clean = t.replace(/[A-Z]{3}\s*\d{4}/g, '');
+            
+            // Trova tutti i codici di 4 cifre rimasti (solo ore ordinarie)
             const codici = clean.match(/\d{4}/g);
             if (codici) {
                 for (const codice of codici) {
                     const ore = parseInt(codice) / 100;
-                    if (ore >= 8) giorni++;
+                    // Giorno lavorativo se >= 6 ore
+                    if (ore >= 6) {
+                        giorni++;
+                    }
                 }
             }
             break;
         }
     }
+    
     return giorni;
 }
 
@@ -646,7 +655,7 @@ class App {
         document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
         document.getElementById('showRolG').textContent = rolGodutiMese.toFixed(2) + ' ore';
         document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
-        document.getElementById('showGgLav').textContent = (this.parsed.giorniLavorativi || 0) + ' gg';
+        document.getElementById('showGgLav').textContent = (this.parsed.giorniLavorativi || 0) + ' gg (≥6h)';
 
         setTimeout(() => this.calcolaResidue(), 100);
 

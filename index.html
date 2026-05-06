@@ -229,12 +229,7 @@
             cursor: pointer;
         }
         .form-select:focus { outline: none; border-color: var(--blue); }
-        .form-small {
-            font-size: 11px;
-            color: var(--text2);
-            margin-top: 2px;
-            display: block;
-        }
+        .form-small { font-size: 11px; color: var(--text2); margin-top: 2px; display: block; }
         .form-check-ok { color: var(--green); font-weight: 700; }
         .form-check-ko { color: var(--red); font-weight: 700; }
         .chart-box { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
@@ -266,6 +261,57 @@
             font-size: 11px;
             font-weight: 700;
             margin: 2px;
+        }
+        .auto-data {
+            background: rgba(16,185,129,0.05);
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .auto-data .title {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .auto-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .auto-grid .item-label {
+            font-size: 10px;
+            color: var(--text2);
+            text-transform: uppercase;
+        }
+        .auto-grid .item-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--green);
+        }
+        .manual-box {
+            background: rgba(245,158,11,0.1);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .manual-box .title {
+            color: var(--orange);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .check-box {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+        .check-box .title {
+            color: var(--text2);
+            font-size: 10px;
+            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -332,7 +378,7 @@
             
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
-                <p class="form-subtitle">Dati automatici dal PDF - Solo il Netto è manuale</p>
+                <p class="form-subtitle">Solo il Netto è manuale. Il resto è automatico dal PDF.</p>
                 
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
@@ -345,57 +391,38 @@
 
                 <div class="form-group"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese" required></div>
                 
-                <div style="background:rgba(245,158,11,0.1); border-radius:12px; padding:12px; margin-bottom:12px;">
-                    <div class="form-small" style="color:var(--orange); margin-bottom:4px;">✍️ <strong>UNICO CAMPO MANUALE</strong></div>
+                <div class="manual-box">
+                    <div class="title">✍️ UNICO CAMPO MANUALE</div>
                     <div class="form-group" style="margin:0;">
-                        <label class="form-label">💰 Netto a Pagare</label>
+                        <label class="form-label" style="color:var(--orange);">💰 Netto a Pagare</label>
                         <input type="number" id="nettoInput" class="form-input" step="0.01" required placeholder="Inserisci il netto dal cedolino">
                     </div>
                 </div>
 
-                <div style="background:rgba(59,130,246,0.05); border-radius:12px; padding:12px; margin-bottom:12px;">
-                    <div class="form-small" style="color:var(--blue); margin-bottom:4px;">📌 Mese precedente: <strong id="mesePrecLabel">--</strong></div>
+                <div class="auto-data">
+                    <div class="title">🤖 DATI AUTOMATICI DAL PDF</div>
+                    <div style="font-size:11px; color:var(--blue); margin-bottom:8px;">📌 Mese precedente: <strong id="mesePrecLabel">--</strong></div>
+                    <div class="auto-grid">
+                        <div><div class="item-label">🏖️ Ferie Godute</div><div class="item-value" id="showFerieG">--</div></div>
+                        <div><div class="item-label">🏖️ Ferie Residue</div><div class="item-value" id="showFerieR">--</div></div>
+                        <div><div class="item-label">⏰ ROL Goduti</div><div class="item-value" id="showRolG">--</div></div>
+                        <div><div class="item-label">⏰ ROL Residui</div><div class="item-value" id="showRolR">--</div></div>
+                        <div><div class="item-label">🍽️ Giorni Lavorativi</div><div class="item-value" id="showGgLav">--</div></div>
+                    </div>
+                    <div class="check-box">
+                        <div class="title">🔍 Controllo Residue</div>
+                        <div id="ferieCheck" style="font-size:12px;"></div>
+                        <div id="rolCheck" style="font-size:12px;"></div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">🏖️ Ferie GODUTE questo mese <span class="tag auto">AUTO</span></label>
-                    <input type="number" id="ferieGInput" class="form-input found" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">🏖️ Ferie RESIDUE (calcolate)</label>
-                    <input type="number" id="ferieRCalc" class="form-input found" readonly>
-                    <span class="form-small" id="ferieFormula"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">🏖️ Ferie RESIDUE (da cedolino) <span class="tag auto">AUTO</span></label>
-                    <input type="number" id="ferieRInput" class="form-input found" readonly>
-                    <span class="form-small" id="ferieCheck"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">⏰ ROL GODUTI questo mese <span class="tag auto">AUTO</span></label>
-                    <input type="number" id="rolGInput" class="form-input found" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">⏰ ROL RESIDUI (calcolati)</label>
-                    <input type="number" id="rolRCalc" class="form-input found" readonly>
-                    <span class="form-small" id="rolFormula"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">⏰ ROL RESIDUI (da cedolino) <span class="tag auto">AUTO</span></label>
-                    <input type="number" id="rolRInput" class="form-input found" readonly>
-                    <span class="form-small" id="rolCheck"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">🍽️ Giorni Lavorativi <span class="tag auto">AUTO</span></label>
-                    <input type="number" id="ggLavInput" class="form-input found" readonly>
-                    <span class="form-small">Solo giorni con ≥8 ore (0800)</span>
-                </div>
+                <input type="hidden" id="ferieGInput">
+                <input type="hidden" id="ferieRInput">
+                <input type="hidden" id="rolGInput">
+                <input type="hidden" id="rolRInput">
+                <input type="hidden" id="ferieRCalc">
+                <input type="hidden" id="rolRCalc">
+                <input type="hidden" id="ggLavInput">
                 
                 <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
                 <button class="btn-outline" onclick="app.annulla()" style="margin-top:8px;">❌ Annulla</button>
@@ -420,7 +447,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V29', 1);
+            const r = indexedDB.open('CED_V30', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -443,7 +470,7 @@ class DB {
     }
 }
 
-// ======================== PARSER ========================
+// ======================== CONTA GIORNI LAVORATIVI ========================
 function contaGiorniLavorativi(text) {
     const presIdx = text.indexOf('PRESENZE MESE DI');
     if (presIdx < 0) return 0;
@@ -470,6 +497,7 @@ function contaGiorniLavorativi(text) {
     return giorni;
 }
 
+// ======================== PARSER ========================
 function parsePage(text) {
     const clean = s => s ? parseFloat(String(s).replace(/\./g, '').replace(',', '.')) || 0 : 0;
     const r = { netto: null, ferieGodute: 0, ferieResidue: 0, rolGoduti: 0, rolResidui: 0 };
@@ -594,33 +622,33 @@ class App {
         if (this.cedPrec) {
             this.lastResidue.ferie = this.cedPrec.ferieResidue || 0;
             this.lastResidue.rol = this.cedPrec.rolResidui || 0;
-            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} ✅ (trovato)`;
+            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} ✅`;
         } else {
             const ferieMan = prompt(`📅 Non trovo ${nomiMesi[mesePrec]} ${annoPrec}.\n\nInserisci le FERIE RESIDUE di ${nomiMesi[mesePrec]}:`, '0');
             const rolMan = prompt(`⏰ Inserisci i ROL RESIDUI di ${nomiMesi[mesePrec]}:`, '0');
             this.lastResidue.ferie = parseFloat(ferieMan) || 0;
             this.lastResidue.rol = parseFloat(rolMan) || 0;
-            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} 📝 (manuale)`;
+            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} 📝`;
         }
 
-        // NETTO MANUALE
         document.getElementById('nettoInput').value = '';
-        document.getElementById('nettoInput').classList.remove('found');
 
-        // Ferie godute mese
         const ferieGoduteMese = this.cedPrec ? Math.max(0, (this.parsed.ferieGodute || 0) - (this.cedPrec.ferieGodute || 0)) : (this.parsed.ferieGodute || 0);
+        const rolGodutiMese = this.cedPrec ? Math.max(0, (this.parsed.rolGoduti || 0) - (this.cedPrec.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
+
         document.getElementById('ferieGInput').value = ferieGoduteMese.toFixed(2);
         document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
-
-        // ROL goduti mese
-        const rolGodutiMese = this.cedPrec ? Math.max(0, (this.parsed.rolGoduti || 0) - (this.cedPrec.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
         document.getElementById('rolGInput').value = rolGodutiMese.toFixed(2);
         document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
-
-        // Giorni lavorativi
         document.getElementById('ggLavInput').value = this.parsed.giorniLavorativi || '';
 
-        this.calcolaResidue();
+        document.getElementById('showFerieG').textContent = ferieGoduteMese.toFixed(2) + ' gg';
+        document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
+        document.getElementById('showRolG').textContent = rolGodutiMese.toFixed(2) + ' ore';
+        document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
+        document.getElementById('showGgLav').textContent = (this.parsed.giorniLavorativi || 0) + ' gg';
+
+        setTimeout(() => this.calcolaResidue(), 100);
 
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
@@ -639,8 +667,6 @@ class App {
         
         document.getElementById('ferieRCalc').value = ferieCalc.toFixed(2);
         document.getElementById('rolRCalc').value = rolCalc.toFixed(2);
-        document.getElementById('ferieFormula').textContent = `${ferieResiduePrec.toFixed(2)} - ${ferieGodute} = ${ferieCalc.toFixed(2)}`;
-        document.getElementById('rolFormula').textContent = `${rolResiduiPrec.toFixed(2)} - ${rolGoduti} = ${rolCalc.toFixed(2)}`;
         
         const ferieCed = +document.getElementById('ferieRInput').value || 0;
         const rolCed = +document.getElementById('rolRInput').value || 0;
@@ -650,27 +676,25 @@ class App {
         
         if (ferieCed > 0) {
             const diff = Math.abs(ferieCalc - ferieCed);
-            ferieCheck.style.display = 'block';
             if (diff < 0.1) {
-                ferieCheck.innerHTML = '✅ Corretto!';
-                ferieCheck.className = 'form-small form-check-ok';
+                ferieCheck.innerHTML = '✅ Ferie: Corretto!';
+                ferieCheck.className = 'form-check-ok';
             } else {
-                ferieCheck.innerHTML = `⚠️ Differenza: ${(ferieCed - ferieCalc).toFixed(2)} gg`;
-                ferieCheck.className = 'form-small form-check-ko';
+                ferieCheck.innerHTML = `⚠️ Ferie: Differenza di ${(ferieCed - ferieCalc).toFixed(2)} gg`;
+                ferieCheck.className = 'form-check-ko';
             }
-        } else { ferieCheck.style.display = 'none'; }
+        } else { ferieCheck.innerHTML = ''; }
         
         if (rolCed > 0) {
             const diff = Math.abs(rolCalc - rolCed);
-            rolCheck.style.display = 'block';
             if (diff < 0.1) {
-                rolCheck.innerHTML = '✅ Corretto!';
-                rolCheck.className = 'form-small form-check-ok';
+                rolCheck.innerHTML = '✅ ROL: Corretto!';
+                rolCheck.className = 'form-check-ok';
             } else {
-                rolCheck.innerHTML = `⚠️ Differenza: ${(rolCed - rolCalc).toFixed(2)} ore`;
-                rolCheck.className = 'form-small form-check-ko';
+                rolCheck.innerHTML = `⚠️ ROL: Differenza di ${(rolCed - rolCalc).toFixed(2)} ore`;
+                rolCheck.className = 'form-check-ko';
             }
-        } else { rolCheck.style.display = 'none'; }
+        } else { rolCheck.innerHTML = ''; }
     }
 
     async renderPage() {
@@ -693,7 +717,7 @@ class App {
         if (confirm('Sei sicuro? I dati non verranno salvati.')) {
             this.pdfDoc = null; this.pagesText = []; this.cedPrec = null;
             this.lastResidue = { ferie: 0, rol: 0 };
-            document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
+            document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
             document.getElementById('uploadSection').style.display = 'block';
             document.getElementById('workSection').style.display = 'none';
             this.toast('❌ Annullato');
@@ -729,7 +753,7 @@ class App {
         this.toast('✅ Salvato!');
         this.pdfDoc = null; this.pagesText = []; this.cedPrec = null;
         this.lastResidue = { ferie: 0, rol: 0 };
-        document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; i.classList.remove('found'); });
+        document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
         document.getElementById('uploadSection').style.display = 'block';
         document.getElementById('workSection').style.display = 'none';
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -789,10 +813,7 @@ class App {
         document.getElementById('rGod').textContent = (lastNormale.rolGoduti||0)+' ore';
         document.getElementById('rRes').textContent = (lastNormale.rolResidui||0)+' ore';
 
-        // BUONI PASTO SOLO DAL 2026
-        const bpTot = normali
-            .filter(p => p.year >= 2026)
-            .reduce((s, p) => s + (p.ggLav || 0), 0);
+        const bpTot = normali.filter(p => p.year >= 2026).reduce((s, p) => s + (p.ggLav || 0), 0);
         const bpImp = bpTot * 8;
         document.getElementById('bpPreview').innerHTML = `
             <div class="bp-highlight">
@@ -866,7 +887,6 @@ class App {
         }
     }
 
-    // ======================== BACKUP ========================
     async esportaDB() {
         const all = await this.db.all();
         const backup = { versione: '1.0', data: new Date().toISOString(), cedolini: all };
@@ -887,13 +907,13 @@ class App {
             const text = await file.text();
             const backup = JSON.parse(text);
             if (!backup.cedolini || !Array.isArray(backup.cedolini)) throw new Error('Formato non valido');
-            if (confirm(`Importare ${backup.cedolini.length} cedolini? I dati esistenti verranno uniti.`)) {
+            if (confirm(`Importare ${backup.cedolini.length} cedolini?`)) {
                 for (const ced of backup.cedolini) { await this.db.save(ced); }
                 this.toast(`✅ Importati ${backup.cedolini.length} cedolini!`);
                 await this.loadHome();
             }
         } catch (err) {
-            alert('❌ File non valido. Carica un file .json di backup.');
+            alert('❌ File non valido.');
         }
         event.target.value = '';
     }

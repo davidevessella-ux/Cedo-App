@@ -55,13 +55,15 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 18px;
         }
-        .header-title { display: flex; align-items: baseline; gap: 6px; }
+        .header-title { display: flex; align-items: baseline; gap: 4px; }
         .header h1 { font-size: 20px; font-weight: 700; }
+        .header h1 .pro { color: var(--text); }
         .version {
             font-size: 9px;
             color: var(--text2);
             font-weight: 400;
             letter-spacing: 0.5px;
+            margin-left: 2px;
         }
         .header-nav { margin-left: auto; display: flex; gap: 4px; overflow-x: auto; }
         .nav-btn {
@@ -308,8 +310,8 @@
     <header class="header">
         <div class="logo">💎</div>
         <div class="header-title">
-            <h1>Cedolini Pro</h1>
-            <span class="version">Beta 0.4</span>
+            <h1>Cedolini <span class="pro">Pro</span></h1>
+            <span class="version">Beta 0.6</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -362,7 +364,7 @@
             <div class="pdf-box"><canvas id="pdfCanvas"></canvas></div>
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
-                <p class="form-subtitle">Netto e Giorni Lavorativi manuali. Il resto è automatico.</p>
+                <p class="form-subtitle">Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.</p>
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
                     <select id="tipoInput" class="form-select">
@@ -387,7 +389,6 @@
 
                 <div class="auto-data">
                     <div class="title">🤖 DATI AUTOMATICI DAL PDF</div>
-                    <div style="font-size:11px; color:var(--blue); margin-bottom:8px;">📌 Mese precedente: <strong id="mesePrecLabel">--</strong></div>
                     <div class="auto-grid">
                         <div><div class="item-label">🏖️ Ferie Godute</div><div class="item-value" id="showFerieG">--</div></div>
                         <div><div class="item-label">🏖️ Ferie Residue</div><div class="item-value" id="showFerieR">--</div></div>
@@ -400,8 +401,6 @@
                 <input type="hidden" id="ferieRInput">
                 <input type="hidden" id="rolGInput">
                 <input type="hidden" id="rolRInput">
-                <input type="hidden" id="ferieRCalc">
-                <input type="hidden" id="rolRCalc">
                 
                 <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
                 <button class="btn-outline" onclick="app.annulla()" style="margin-top:8px;">❌ Annulla</button>
@@ -422,7 +421,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V36', 1);
+            const r = indexedDB.open('CED_V38', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -489,8 +488,6 @@ class App {
         this.pagesText = [];
         this.parsed = {};
         this.charts = {};
-        this.lastResidue = { ferie: 0, rol: 0 };
-        this.cedPrec = null;
     }
 
     async init() {
@@ -552,47 +549,17 @@ class App {
         const dm = file.name.match(/-(\d{2})-(\d{4})-/);
         if (dm) document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
 
-        const meseCorrente = parseInt(dm[1]);
-        const annoCorrente = parseInt(dm[2]);
-        const nomiMesi = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-        let mesePrec, annoPrec;
-        if (meseCorrente === 1) { mesePrec = 12; annoPrec = annoCorrente - 1; }
-        else { mesePrec = meseCorrente - 1; annoPrec = annoCorrente; }
-        
-        const all = await this.db.all();
-        this.cedPrec = all.find(p => {
-            const d = new Date(p.date);
-            return d.getFullYear() === annoPrec && d.getMonth() === (mesePrec - 1) && (!p.tipo || p.tipo === 'normale');
-        });
-        
-        if (this.cedPrec) {
-            this.lastResidue.ferie = this.cedPrec.ferieResidue || 0;
-            this.lastResidue.rol = this.cedPrec.rolResidui || 0;
-            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} ✅`;
-        } else {
-            const ferieMan = prompt(`📅 Non trovo ${nomiMesi[mesePrec]} ${annoPrec}.\n\nInserisci le FERIE RESIDUE di ${nomiMesi[mesePrec]}:`, '0');
-            const rolMan = prompt(`⏰ Inserisci i ROL RESIDUI di ${nomiMesi[mesePrec]}:`, '0');
-            this.lastResidue.ferie = parseFloat(ferieMan) || 0;
-            this.lastResidue.rol = parseFloat(rolMan) || 0;
-            document.getElementById('mesePrecLabel').textContent = `${nomiMesi[mesePrec]} ${annoPrec} 📝`;
-        }
-
         document.getElementById('nettoInput').value = '';
         document.getElementById('ggLavInput').value = '';
 
-        const ferieGoduteMese = this.cedPrec ? Math.max(0, (this.parsed.ferieGodute || 0) - (this.cedPrec.ferieGodute || 0)) : (this.parsed.ferieGodute || 0);
-        const rolGodutiMese = this.cedPrec ? Math.max(0, (this.parsed.rolGoduti || 0) - (this.cedPrec.rolGoduti || 0)) : (this.parsed.rolGoduti || 0);
-
-        document.getElementById('ferieGInput').value = ferieGoduteMese.toFixed(2);
+        document.getElementById('ferieGInput').value = (this.parsed.ferieGodute || 0).toFixed(2);
         document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
-        document.getElementById('rolGInput').value = rolGodutiMese.toFixed(2);
+        document.getElementById('rolGInput').value = (this.parsed.rolGoduti || 0).toFixed(2);
         document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
-        document.getElementById('ferieRCalc').value = Math.max(0, this.lastResidue.ferie - ferieGoduteMese).toFixed(2);
-        document.getElementById('rolRCalc').value = Math.max(0, this.lastResidue.rol - rolGodutiMese).toFixed(2);
 
-        document.getElementById('showFerieG').textContent = ferieGoduteMese.toFixed(2) + ' gg';
+        document.getElementById('showFerieG').textContent = (this.parsed.ferieGodute || 0).toFixed(2) + ' gg';
         document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
-        document.getElementById('showRolG').textContent = rolGodutiMese.toFixed(2) + ' ore';
+        document.getElementById('showRolG').textContent = (this.parsed.rolGoduti || 0).toFixed(2) + ' ore';
         document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
 
         document.getElementById('uploadSection').style.display = 'none';
@@ -619,8 +586,7 @@ class App {
 
     annulla() {
         if (confirm('Sei sicuro?')) {
-            this.pdfDoc = null; this.pagesText = []; this.cedPrec = null;
-            this.lastResidue = { ferie: 0, rol: 0 };
+            this.pdfDoc = null; this.pagesText = [];
             document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
             document.getElementById('uploadSection').style.display = 'block';
             document.getElementById('workSection').style.display = 'none';
@@ -643,17 +609,16 @@ class App {
             year: d.getFullYear(), month: meseRif,
             netto: +document.getElementById('nettoInput').value || 0,
             ferieGodute: +document.getElementById('ferieGInput').value || 0,
-            ferieResidue: +document.getElementById('ferieRCalc').value || 0,
+            ferieResidue: +document.getElementById('ferieRInput').value || 0,
             rolGoduti: +document.getElementById('rolGInput').value || 0,
-            rolResidui: +document.getElementById('rolRCalc').value || 0,
+            rolResidui: +document.getElementById('rolRInput').value || 0,
             ggLav: +document.getElementById('ggLavInput').value || 0,
             tipo: tipo
         };
         if (!data.netto) return alert('⚠️ Netto obbligatorio');
         await this.db.save(data);
         this.toast('✅ Salvato!');
-        this.pdfDoc = null; this.pagesText = []; this.cedPrec = null;
-        this.lastResidue = { ferie: 0, rol: 0 };
+        this.pdfDoc = null; this.pagesText = [];
         document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
         document.getElementById('uploadSection').style.display = 'block';
         document.getElementById('workSection').style.display = 'none';
@@ -704,15 +669,19 @@ class App {
         }
 
         const lastNormale = normali.length ? normali[normali.length - 1] : last;
-        const ft = (lastNormale.ferieResidue || 0) + (lastNormale.ferieGodute || 0);
-        document.getElementById('fBar').style.width = ft>0?((lastNormale.ferieGodute||0)/ft*100)+'%':'0%';
-        document.getElementById('fGod').textContent = (lastNormale.ferieGodute||0)+' gg';
-        document.getElementById('fRes').textContent = (lastNormale.ferieResidue||0)+' gg';
+        const ferieGod = lastNormale.ferieGodute || 0;
+        const ferieRes = lastNormale.ferieResidue || 0;
+        const ferieTot = ferieGod + ferieRes;
+        document.getElementById('fBar').style.width = ferieTot > 0 ? (ferieGod / ferieTot * 100) + '%' : '0%';
+        document.getElementById('fGod').textContent = ferieGod + ' gg';
+        document.getElementById('fRes').textContent = ferieRes + ' gg';
 
-        const rt = (lastNormale.rolResidui || 0) + (lastNormale.rolGoduti || 0);
-        document.getElementById('rBar').style.width = rt>0?((lastNormale.rolGoduti||0)/rt*100)+'%':'0%';
-        document.getElementById('rGod').textContent = (lastNormale.rolGoduti||0)+' ore';
-        document.getElementById('rRes').textContent = (lastNormale.rolResidui||0)+' ore';
+        const rolGod = lastNormale.rolGoduti || 0;
+        const rolRes = lastNormale.rolResidui || 0;
+        const rolTot = rolGod + rolRes;
+        document.getElementById('rBar').style.width = rolTot > 0 ? (rolGod / rolTot * 100) + '%' : '0%';
+        document.getElementById('rGod').textContent = rolGod + ' ore';
+        document.getElementById('rRes').textContent = rolRes + ' ore';
 
         const bpTot = normali.filter(p => p.year >= 2026).reduce((s, p) => s + (p.ggLav || 0), 0);
         const bpImp = bpTot * 8;
@@ -766,7 +735,10 @@ class App {
                     {label:''+cy, data:cur, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3, borderWidth:3, pointRadius:4, spanGaps:true},
                     {label:''+py, data:prev, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3, borderWidth:2, pointRadius:4, spanGaps:true}
                 ]},
-                options:{responsive:true, maintainAspectRatio:false, scales:{y:{ticks:{callback:v=>'€'+v.toLocaleString(), color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}}, x:{ticks:{color:'#999'}}}}
+                options:{responsive:true, maintainAspectRatio:false, scales:{
+                    y:{min:2000, ticks:{stepSize:50, callback:v=>'€'+v.toLocaleString(), color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}},
+                    x:{ticks:{color:'#999'}}
+                }}
             });
         }
         const c2 = document.getElementById('totalChart')?.getContext('2d');
@@ -776,7 +748,10 @@ class App {
             const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto,0));
             this.charts.t = new Chart(c2, {
                 type:'bar', data:{labels:years, datasets:[{label:'Totale', data:totals, backgroundColor:years.map(y=>y===cy?'rgba(16,185,129,0.8)':'rgba(59,130,246,0.6)'), borderRadius:10}]},
-                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'€'+(v/1000).toFixed(0)+'k', color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}}, x:{ticks:{color:'#999'}}}}
+                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
+                    y:{min:20000, ticks:{stepSize:500, callback:v=>'€'+(v/1000).toFixed(0)+'k', color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}},
+                    x:{ticks:{color:'#999'}}
+                }}
             });
         }
     }

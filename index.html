@@ -373,7 +373,7 @@
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.10</span>
+            <span class="version">Beta 0.11</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -431,13 +431,16 @@
                 
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
-                    <select id="tipoInput" class="form-select">
+                    <select id="tipoInput" class="form-select" onchange="app.onTipoChange()">
                         <option value="normale">📅 Stipendio Mensile</option>
                         <option value="tredicesima">🎄 Tredicesima</option>
                         <option value="quattordicesima">🌴 Quattordicesima</option>
                     </select>
                 </div>
-                <div class="form-group"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese" required></div>
+                <div class="form-group" id="meseGroup">
+                    <label class="form-label">📅 Mese</label>
+                    <input type="month" id="meseInput" class="form-input mese">
+                </div>
                 
                 <div class="manual-box">
                     <div class="title">✍️ CAMPI MANUALI</div>
@@ -498,7 +501,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V42', 1);
+            const r = indexedDB.open('CED_V43', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -606,6 +609,19 @@ class App {
         inp.addEventListener('change', async e => { if (e.target.files[0]) await this.loadPDF(e.target.files[0]); });
     }
 
+    onTipoChange() {
+        const tipo = document.getElementById('tipoInput').value;
+        if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
+            document.getElementById('meseGroup').style.display = 'none';
+            document.getElementById('ggLavGroup').style.display = 'none';
+            document.getElementById('autoDataBox').style.display = 'none';
+        } else {
+            document.getElementById('meseGroup').style.display = 'block';
+            document.getElementById('ggLavGroup').style.display = 'block';
+            document.getElementById('autoDataBox').style.display = 'block';
+        }
+    }
+
     async loadPDF(file) {
         this.toast('📄 Analisi...');
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -639,11 +655,13 @@ class App {
         document.getElementById('nettoInput').value = '';
         document.getElementById('ggLavInput').value = '';
 
+        // Reset visibilità
+        document.getElementById('meseGroup').style.display = 'block';
+        document.getElementById('ggLavGroup').style.display = 'block';
+        document.getElementById('autoDataBox').style.display = 'block';
+
         if (isAnnoCorrente) {
-            // Anno corrente: mostra tutto
             document.getElementById('avvisoAnno').style.display = 'none';
-            document.getElementById('ggLavGroup').style.display = 'block';
-            document.getElementById('autoDataBox').style.display = 'block';
             document.getElementById('formSubtitle').textContent = 'Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.';
 
             document.getElementById('ferieGInput').value = (this.parsed.ferieGodute || 0).toFixed(2);
@@ -656,7 +674,6 @@ class App {
             document.getElementById('showRolG').textContent = (this.parsed.rolGoduti || 0).toFixed(2) + ' ore';
             document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
         } else {
-            // Anno passato: solo Netto
             document.getElementById('avvisoAnno').style.display = 'block';
             document.getElementById('ggLavGroup').style.display = 'none';
             document.getElementById('autoDataBox').style.display = 'none';
@@ -672,7 +689,7 @@ class App {
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
         await this.renderPage();
-        this.toast(isAnnoCorrente ? '✅ Pronto! Inserisci Netto e Giorni' : '✅ Pronto! Inserisci il Netto');
+        this.toast('✅ Pronto!');
     }
 
     async renderPage() {
@@ -702,24 +719,34 @@ class App {
     }
 
     async saveData() {
-        const mese = document.getElementById('meseInput').value;
-        if (!mese) return alert('⚠️ Manca il mese');
-        const d = new Date(mese + '-01');
         const tipo = document.getElementById('tipoInput').value;
-        let meseRif = d.getMonth(), annoRif = d.getFullYear();
-        if (tipo === 'tredicesima') meseRif = 11;
-        if (tipo === 'quattordicesima') meseRif = 5;
+        let d, meseRif, annoRif;
+        
+        if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
+            // Per 13ª e 14ª non serve il mese, usa solo l'anno dal nome file o corrente
+            const now = new Date();
+            d = now;
+            meseRif = tipo === 'tredicesima' ? 11 : 5;
+            annoRif = d.getFullYear();
+        } else {
+            const mese = document.getElementById('meseInput').value;
+            if (!mese) return alert('⚠️ Manca il mese');
+            d = new Date(mese + '-01');
+            meseRif = d.getMonth();
+            annoRif = d.getFullYear();
+        }
+        
         const dataRef = new Date(annoRif, meseRif, 1);
         
         let ym;
-        if (tipo === 'tredicesima') ym = `13-${d.getFullYear()}`;
-        else if (tipo === 'quattordicesima') ym = `14-${d.getFullYear()}`;
+        if (tipo === 'tredicesima') ym = `13-${annoRif}`;
+        else if (tipo === 'quattordicesima') ym = `14-${annoRif}`;
         else ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
         
         const data = {
             ym: ym,
             date: dataRef.toISOString(), competenza: dataRef.toISOString(),
-            year: d.getFullYear(), month: meseRif,
+            year: annoRif, month: meseRif,
             netto: +document.getElementById('nettoInput').value || 0,
             ferieGodute: +document.getElementById('ferieGInput').value || 0,
             ferieResidue: +document.getElementById('ferieRInput').value || 0,
@@ -832,7 +859,7 @@ class App {
     }
 
     async eliminaCedolino(id) {
-        if (confirm('Eliminare questo cedolino? L\'operazione non è reversibile.')) {
+        if (confirm('Eliminare questo cedolino?')) {
             await this.db.delete(id);
             this.toast('🗑️ Cedolino eliminato');
             await this.loadStorico();

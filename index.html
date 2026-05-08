@@ -363,7 +363,7 @@
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.8</span>
+            <span class="version">Beta 0.9</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -400,7 +400,6 @@
     </main>
 
     <main id="add" class="screen">
-        <!-- UPLOAD -->
         <div id="uploadSection">
             <div class="upload-zone" id="upBox">
                 <div class="icon">📄</div><h3>Carica cedolino PDF</h3><p>INAZ - LUL-...pdf</p>
@@ -408,8 +407,6 @@
                 <button class="btn btn-blue" onclick="document.getElementById('pdfInput').click()">Seleziona file</button>
             </div>
         </div>
-
-        <!-- WORK SECTION (PDF + FORM) -->
         <div id="workSection" style="display:none;">
             <div class="page-nav">
                 <button onclick="app.prevPage()" id="prevBtn">◀ Pag 1</button>
@@ -461,8 +458,6 @@
                 <button class="btn-outline" onclick="app.annulla()" style="margin-top:8px;">❌ Annulla</button>
             </div>
         </div>
-
-        <!-- STORICO (sotto nella stessa schermata) -->
         <div style="margin-top:20px;">
             <h3 style="margin-bottom:8px;">📋 Storico Cedolini</h3>
             <div class="filter-row">
@@ -491,7 +486,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V40', 1);
+            const r = indexedDB.open('CED_V41', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -679,8 +674,15 @@ class App {
         if (tipo === 'tredicesima') meseRif = 11;
         if (tipo === 'quattordicesima') meseRif = 5;
         const dataRef = new Date(annoRif, meseRif, 1);
+        
+        // ym UNICO per 13ª e 14ª (non sovrascrive il mese normale)
+        let ym;
+        if (tipo === 'tredicesima') ym = `13-${d.getFullYear()}`;
+        else if (tipo === 'quattordicesima') ym = `14-${d.getFullYear()}`;
+        else ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        
         const data = {
-            ym: tipo === 'normale' ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : `EXTRA-${tipo}-${d.getFullYear()}`,
+            ym: ym,
             date: dataRef.toISOString(), competenza: dataRef.toISOString(),
             year: d.getFullYear(), month: meseRif,
             netto: +document.getElementById('nettoInput').value || 0,

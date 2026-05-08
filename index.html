@@ -303,6 +303,58 @@
             font-weight: 700;
             margin-bottom: 8px;
         }
+        .storico-item {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .storico-item .mese {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .storico-item .netto {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--green);
+        }
+        .storico-item .tipo {
+            font-size: 10px;
+            color: var(--text2);
+            text-transform: uppercase;
+        }
+        .delete-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: rgba(239,68,68,0.15);
+            border: none;
+            color: var(--red);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-btn:active { background: var(--red); color: #fff; }
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .filter-row select {
+            flex: 1;
+            padding: 10px;
+            background: var(--card);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -311,11 +363,12 @@
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.6</span>
+            <span class="version">Beta 0.7</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
             <button class="nav-btn" data-scr="add">+ Nuovo</button>
+            <button class="nav-btn" data-scr="storico">📋 Storico</button>
             <button class="nav-btn" data-scr="buonipasto">🍽️ BP</button>
             <button class="nav-btn" data-scr="charts">📊 Grafici</button>
         </div>
@@ -408,6 +461,21 @@
         </div>
     </main>
 
+    <!-- STORICO -->
+    <main id="storico" class="screen">
+        <h3 style="margin-bottom:12px;">📋 Storico Cedolini</h3>
+        <div class="filter-row">
+            <select id="storicoAnno" onchange="app.loadStorico()">
+                <option value="tutti">Tutti gli anni</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+            </select>
+        </div>
+        <div id="storicoContent"></div>
+    </main>
+
     <main id="buonipasto" class="screen"><h3 style="margin-bottom:16px;">🍽️ Buoni Pasto (dal 2026)</h3><div id="bpContent"></div></main>
     <main id="charts" class="screen">
         <div class="chart-box"><h3>📊 Confronto: <span id="chartYearCurr"></span> vs <span id="chartYearPrev"></span></h3><div class="chart-inner"><canvas id="compareChart"></canvas></div></div>
@@ -421,7 +489,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V38', 1);
+            const r = indexedDB.open('CED_V39', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -440,7 +508,11 @@ class DB {
     async all() {
         const tx = this.db.transaction('ced', 'readonly');
         const d = await new Promise(r => { const q = tx.objectStore('ced').getAll(); q.onsuccess = () => r(q.result); });
-        return d.sort((a, b) => new Date(a.date) - new Date(b.date));
+        return d.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+    async delete(id) {
+        const tx = this.db.transaction('ced', 'readwrite');
+        return new Promise(r => { const q = tx.objectStore('ced').delete(id); q.onsuccess = () => r(); });
     }
 }
 
@@ -505,6 +577,7 @@ class App {
                 document.getElementById(e.target.dataset.scr)?.classList.add('active');
                 e.target.classList.add('active');
                 if (e.target.dataset.scr === 'home') await this.loadHome();
+                if (e.target.dataset.scr === 'storico') await this.loadStorico();
                 if (e.target.dataset.scr === 'buonipasto') await this.loadBP();
                 if (e.target.dataset.scr === 'charts') await this.loadCharts();
             });
@@ -632,7 +705,7 @@ class App {
     async loadHome() {
         const all = await this.db.all();
         if (!all.length) return;
-        const last = all[all.length - 1];
+        const last = all[0];
         document.getElementById('hNetto').textContent = `€${last.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
         document.getElementById('hMese').textContent = new Date(last.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
         const tipoLabel = last.tipo === 'tredicesima' ? '🎄 Tredicesima' : last.tipo === 'quattordicesima' ? '🌴 Quattordicesima' : `Ferie: ${last.ferieGodute}gg | ROL: ${last.rolGoduti}h`;
@@ -668,7 +741,7 @@ class App {
             grid.appendChild(cell);
         }
 
-        const lastNormale = normali.length ? normali[normali.length - 1] : last;
+        const lastNormale = normali.length ? normali[0] : last;
         const ferieGod = lastNormale.ferieGodute || 0;
         const ferieRes = lastNormale.ferieResidue || 0;
         const ferieTot = ferieGod + ferieRes;
@@ -690,13 +763,48 @@ class App {
             <div style="font-size:11px; color:var(--text2); margin-top:4px;">Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})</div>`;
     }
 
+    async loadStorico() {
+        const all = await this.db.all();
+        const c = document.getElementById('storicoContent');
+        if (!all.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino caricato</p>'; return; }
+
+        const anno = document.getElementById('storicoAnno').value;
+        let filtered = all;
+        if (anno !== 'tutti') filtered = all.filter(p => p.year === parseInt(anno));
+
+        let h = '';
+        for (const p of filtered) {
+            const tipoLabel = p.tipo === 'tredicesima' ? '🎄 13ª' : p.tipo === 'quattordicesima' ? '🌴 14ª' : '';
+            h += `<div class="storico-item">
+                <div>
+                    <div class="mese">${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
+                    ${tipoLabel ? `<div class="tipo">${tipoLabel}</div>` : ''}
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="netto">€${p.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}</div>
+                    <button class="delete-btn" onclick="app.eliminaCedolino(${p.id})">🗑</button>
+                </div>
+            </div>`;
+        }
+        c.innerHTML = h || '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino per questo anno</p>';
+    }
+
+    async eliminaCedolino(id) {
+        if (confirm('Eliminare questo cedolino? L\'operazione non è reversibile.')) {
+            await this.db.delete(id);
+            this.toast('🗑️ Cedolino eliminato');
+            await this.loadStorico();
+            await this.loadHome();
+        }
+    }
+
     async loadBP() {
         const all = await this.db.all();
         const c = document.getElementById('bpContent');
         const normali = all.filter(p => (p.tipo === 'normale' || !p.tipo) && p.year >= 2026);
         if (!normali.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino dal 2026</p>'; return; }
         let tb = 0, ti = 0, h = '';
-        for (const p of normali.reverse()) {
+        for (const p of normali) {
             if (p.ggLav > 0) {
                 tb += p.ggLav; ti += p.ggLav * 8;
                 h += `<div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>

@@ -355,6 +355,16 @@
             font-family: inherit;
             font-size: 14px;
         }
+        .avviso-anno {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--blue);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -363,7 +373,7 @@
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.9</span>
+            <span class="version">Beta 0.10</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -416,7 +426,9 @@
             <div class="pdf-box"><canvas id="pdfCanvas"></canvas></div>
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
-                <p class="form-subtitle">Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.</p>
+                <p class="form-subtitle" id="formSubtitle">Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.</p>
+                <div id="avvisoAnno" class="avviso-anno" style="display:none;">📌 Anno passato: viene richiesto solo il Netto a Pagare</div>
+                
                 <div class="form-group">
                     <label class="form-label">🏷️ Tipo Cedolino</label>
                     <select id="tipoInput" class="form-select">
@@ -433,13 +445,13 @@
                         <label class="form-label" style="color:var(--orange);">💰 Netto a Pagare</label>
                         <input type="number" id="nettoInput" class="form-input" step="0.01" required placeholder="Inserisci il netto dal cedolino">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="ggLavGroup">
                         <label class="form-label" style="color:var(--orange);">🍽️ Giorni Lavorativi</label>
                         <input type="number" id="ggLavInput" class="form-input" step="1" placeholder="Conta i giorni dal calendario">
                     </div>
                 </div>
 
-                <div class="auto-data">
+                <div class="auto-data" id="autoDataBox">
                     <div class="title">🤖 DATI AUTOMATICI DAL PDF</div>
                     <div class="auto-grid">
                         <div><div class="item-label">🏖️ Ferie Godute</div><div class="item-value" id="showFerieG">--</div></div>
@@ -486,7 +498,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V41', 1);
+            const r = indexedDB.open('CED_V42', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -620,23 +632,47 @@ class App {
         const dm = file.name.match(/-(\d{2})-(\d{4})-/);
         if (dm) document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
 
+        const annoFile = parseInt(dm[2]);
+        const annoCorrente = new Date().getFullYear();
+        const isAnnoCorrente = annoFile === annoCorrente;
+
         document.getElementById('nettoInput').value = '';
         document.getElementById('ggLavInput').value = '';
 
-        document.getElementById('ferieGInput').value = (this.parsed.ferieGodute || 0).toFixed(2);
-        document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
-        document.getElementById('rolGInput').value = (this.parsed.rolGoduti || 0).toFixed(2);
-        document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
+        if (isAnnoCorrente) {
+            // Anno corrente: mostra tutto
+            document.getElementById('avvisoAnno').style.display = 'none';
+            document.getElementById('ggLavGroup').style.display = 'block';
+            document.getElementById('autoDataBox').style.display = 'block';
+            document.getElementById('formSubtitle').textContent = 'Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.';
 
-        document.getElementById('showFerieG').textContent = (this.parsed.ferieGodute || 0).toFixed(2) + ' gg';
-        document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
-        document.getElementById('showRolG').textContent = (this.parsed.rolGoduti || 0).toFixed(2) + ' ore';
-        document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
+            document.getElementById('ferieGInput').value = (this.parsed.ferieGodute || 0).toFixed(2);
+            document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
+            document.getElementById('rolGInput').value = (this.parsed.rolGoduti || 0).toFixed(2);
+            document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
+
+            document.getElementById('showFerieG').textContent = (this.parsed.ferieGodute || 0).toFixed(2) + ' gg';
+            document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
+            document.getElementById('showRolG').textContent = (this.parsed.rolGoduti || 0).toFixed(2) + ' ore';
+            document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
+        } else {
+            // Anno passato: solo Netto
+            document.getElementById('avvisoAnno').style.display = 'block';
+            document.getElementById('ggLavGroup').style.display = 'none';
+            document.getElementById('autoDataBox').style.display = 'none';
+            document.getElementById('formSubtitle').textContent = 'Anno passato: inserisci solo il Netto a Pagare.';
+
+            document.getElementById('ferieGInput').value = '0';
+            document.getElementById('ferieRInput').value = '0';
+            document.getElementById('rolGInput').value = '0';
+            document.getElementById('rolRInput').value = '0';
+            document.getElementById('ggLavInput').value = '0';
+        }
 
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
         await this.renderPage();
-        this.toast('✅ Pronto! Inserisci Netto e Giorni');
+        this.toast(isAnnoCorrente ? '✅ Pronto! Inserisci Netto e Giorni' : '✅ Pronto! Inserisci il Netto');
     }
 
     async renderPage() {
@@ -675,7 +711,6 @@ class App {
         if (tipo === 'quattordicesima') meseRif = 5;
         const dataRef = new Date(annoRif, meseRif, 1);
         
-        // ym UNICO per 13ª e 14ª (non sovrascrive il mese normale)
         let ym;
         if (tipo === 'tredicesima') ym = `13-${d.getFullYear()}`;
         else if (tipo === 'quattordicesima') ym = `14-${d.getFullYear()}`;

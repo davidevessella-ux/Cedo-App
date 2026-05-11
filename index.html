@@ -373,7 +373,7 @@
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.11</span>
+            <span class="version">Beta 0.12</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -490,8 +490,8 @@
 
     <main id="buonipasto" class="screen"><h3 style="margin-bottom:16px;">🍽️ Buoni Pasto (dal 2026)</h3><div id="bpContent"></div></main>
     <main id="charts" class="screen">
-        <div class="chart-box"><h3>📊 Confronto: <span id="chartYearCurr"></span> vs <span id="chartYearPrev"></span></h3><div class="chart-inner"><canvas id="compareChart"></canvas></div></div>
-        <div class="chart-box"><h3>📈 Totale Annuale</h3><div class="chart-inner"><canvas id="totalChart"></canvas></div></div>
+        <div class="chart-box"><h3>📊 Confronto (Netto + Buoni Pasto): <span id="chartYearCurr"></span> vs <span id="chartYearPrev"></span></h3><div class="chart-inner"><canvas id="compareChart"></canvas></div></div>
+        <div class="chart-box"><h3>📈 Totale Annuale (Netto + Buoni Pasto)</h3><div class="chart-inner"><canvas id="totalChart"></canvas></div></div>
     </main>
     <div class="toast" id="toast"></div>
 
@@ -501,7 +501,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V43', 1);
+            const r = indexedDB.open('CED_V44', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -572,6 +572,7 @@ class App {
         this.pagesText = [];
         this.parsed = {};
         this.charts = {};
+        this.annoFile = null;
     }
 
     async init() {
@@ -646,16 +647,22 @@ class App {
         this.parsed = await parseBothPages(this.pagesText);
 
         const dm = file.name.match(/-(\d{2})-(\d{4})-/);
-        if (dm) document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
+        this.annoFile = dm ? parseInt(dm[2]) : new Date().getFullYear();
+        
+        const tipo = document.getElementById('tipoInput').value;
+        if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
+            // Per 13ª e 14ª, non impostare il mese
+            document.getElementById('meseInput').value = '';
+        } else if (dm) {
+            document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
+        }
 
-        const annoFile = parseInt(dm[2]);
         const annoCorrente = new Date().getFullYear();
-        const isAnnoCorrente = annoFile === annoCorrente;
+        const isAnnoCorrente = this.annoFile === annoCorrente;
 
         document.getElementById('nettoInput').value = '';
         document.getElementById('ggLavInput').value = '';
 
-        // Reset visibilità
         document.getElementById('meseGroup').style.display = 'block';
         document.getElementById('ggLavGroup').style.display = 'block';
         document.getElementById('autoDataBox').style.display = 'block';
@@ -686,6 +693,9 @@ class App {
             document.getElementById('ggLavInput').value = '0';
         }
 
+        // Applica la visibilità in base al tipo
+        this.onTipoChange();
+
         document.getElementById('uploadSection').style.display = 'none';
         document.getElementById('workSection').style.display = 'block';
         await this.renderPage();
@@ -710,7 +720,7 @@ class App {
 
     annulla() {
         if (confirm('Sei sicuro?')) {
-            this.pdfDoc = null; this.pagesText = [];
+            this.pdfDoc = null; this.pagesText = []; this.annoFile = null;
             document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
             document.getElementById('uploadSection').style.display = 'block';
             document.getElementById('workSection').style.display = 'none';
@@ -720,28 +730,23 @@ class App {
 
     async saveData() {
         const tipo = document.getElementById('tipoInput').value;
-        let d, meseRif, annoRif;
+        let meseRif, annoRif, ym;
         
         if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
-            // Per 13ª e 14ª non serve il mese, usa solo l'anno dal nome file o corrente
-            const now = new Date();
-            d = now;
+            // Per 13ª e 14ª: usa solo l'anno dal nome file
+            annoRif = this.annoFile || new Date().getFullYear();
             meseRif = tipo === 'tredicesima' ? 11 : 5;
-            annoRif = d.getFullYear();
+            ym = tipo === 'tredicesima' ? `13-${annoRif}` : `14-${annoRif}`;
         } else {
             const mese = document.getElementById('meseInput').value;
             if (!mese) return alert('⚠️ Manca il mese');
-            d = new Date(mese + '-01');
+            const d = new Date(mese + '-01');
             meseRif = d.getMonth();
             annoRif = d.getFullYear();
+            ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
         }
         
         const dataRef = new Date(annoRif, meseRif, 1);
-        
-        let ym;
-        if (tipo === 'tredicesima') ym = `13-${annoRif}`;
-        else if (tipo === 'quattordicesima') ym = `14-${annoRif}`;
-        else ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
         
         const data = {
             ym: ym,
@@ -758,7 +763,7 @@ class App {
         if (!data.netto) return alert('⚠️ Netto obbligatorio');
         await this.db.save(data);
         this.toast('✅ Salvato!');
-        this.pdfDoc = null; this.pagesText = [];
+        this.pdfDoc = null; this.pagesText = []; this.annoFile = null;
         document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
         document.getElementById('uploadSection').style.display = 'block';
         document.getElementById('workSection').style.display = 'none';
@@ -898,14 +903,16 @@ class App {
             const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic','13ª','14ª'];
             const cur = new Array(14).fill(null), prev = new Array(14).fill(null);
             dc.forEach(p => {
-                if (p.tipo === 'tredicesima') cur[12] = (cur[12]||0) + p.netto;
-                else if (p.tipo === 'quattordicesima') cur[13] = (cur[13]||0) + p.netto;
-                else cur[p.month] = (cur[p.month]||0) + p.netto;
+                const valore = p.netto + ((p.ggLav || 0) * 8);
+                if (p.tipo === 'tredicesima') cur[12] = (cur[12]||0) + valore;
+                else if (p.tipo === 'quattordicesima') cur[13] = (cur[13]||0) + valore;
+                else cur[p.month] = (cur[p.month]||0) + valore;
             });
             dp.forEach(p => {
-                if (p.tipo === 'tredicesima') prev[12] = (prev[12]||0) + p.netto;
-                else if (p.tipo === 'quattordicesima') prev[13] = (prev[13]||0) + p.netto;
-                else prev[p.month] = (prev[p.month]||0) + p.netto;
+                const valore = p.netto + ((p.ggLav || 0) * 8);
+                if (p.tipo === 'tredicesima') prev[12] = (prev[12]||0) + valore;
+                else if (p.tipo === 'quattordicesima') prev[13] = (prev[13]||0) + valore;
+                else prev[p.month] = (prev[p.month]||0) + valore;
             });
             this.charts.c = new Chart(c1, {
                 type:'line', data:{labels:mesi, datasets:[
@@ -922,7 +929,7 @@ class App {
         if (c2) {
             if (this.charts.t) this.charts.t.destroy();
             const years = [...new Set(all.map(p=>p.year))].sort();
-            const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto,0));
+            const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto+((p.ggLav||0)*8),0));
             this.charts.t = new Chart(c2, {
                 type:'bar', data:{labels:years, datasets:[{label:'Totale', data:totals, backgroundColor:years.map(y=>y===cy?'rgba(16,185,129,0.8)':'rgba(59,130,246,0.6)'), borderRadius:10}]},
                 options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{

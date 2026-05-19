@@ -365,15 +365,95 @@
             color: var(--blue);
             text-align: center;
         }
+        /* LOGIN */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 20px;
+        }
+        .login-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--text2);
+            margin-bottom: 30px;
+        }
+        .login-input {
+            width: 200px;
+            padding: 16px;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            color: var(--text);
+            font-size: 28px;
+            text-align: center;
+            font-family: inherit;
+            font-weight: 700;
+            letter-spacing: 8px;
+            margin-bottom: 16px;
+        }
+        .login-input:focus { outline: none; border-color: var(--blue); }
+        .login-btn {
+            width: 200px;
+            padding: 14px;
+            background: var(--blue);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .login-btn:disabled { opacity: 0.4; }
+        .login-msg {
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
+            color: var(--red);
+        }
+        .login-cambio {
+            margin-top: 20px;
+            font-size: 11px;
+            color: var(--text2);
+        }
+        .login-cambio a {
+            color: var(--blue);
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-icon">🔐</div>
+        <div class="login-title">Cedolini Pro</div>
+        <div class="login-subtitle">Inserisci il PIN per accedere</div>
+        <input type="password" id="passwordInput" class="login-input" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="····">
+        <button class="login-btn" id="loginBtn" onclick="app.verificaPassword()">Accedi</button>
+        <div class="login-msg" id="loginMsg"></div>
+    </div>
+
+    <!-- APP CONTENT -->
+    <div id="appContent" style="display:none;">
 
     <header class="header">
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.13</span>
+            <span class="version">Beta 0.14</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -388,6 +468,9 @@
             <button class="btn-outline" onclick="app.esportaDB()" style="flex:1;">📤 Backup</button>
             <button class="btn-outline" onclick="document.getElementById('importDB').click()" style="flex:1;">📥 Ripristina</button>
             <input type="file" id="importDB" accept=".json" hidden onchange="app.importaDB(event)">
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button class="btn-outline" onclick="app.cambiaPassword()" style="flex:1;">🔑 Cambia PIN</button>
         </div>
         <div class="cards">
             <div class="card"><div class="lbl">💰 Ultimo Netto</div><div class="val g" id="hNetto">€0</div><div class="sub" id="hDate">--</div></div>
@@ -496,16 +579,23 @@
     </main>
     <div class="toast" id="toast"></div>
 
+    </div><!-- END APP CONTENT -->
+
 <script>
 // ======================== DATABASE ========================
 class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V45', 1);
+            const r = indexedDB.open('CED_V46', 1);
             r.onupgradeneeded = e => {
-                const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
-                s.createIndex('ym', 'ym', { unique: true });
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('ced')) {
+                    db.createObjectStore('ced', { keyPath: 'id', autoIncrement: true }).createIndex('ym', 'ym', { unique: true });
+                }
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
             };
             r.onsuccess = e => { this.db = e.target.result; ok(); };
             r.onerror = e => ko(e.target.error);
@@ -526,6 +616,14 @@ class DB {
     async delete(id) {
         const tx = this.db.transaction('ced', 'readwrite');
         return new Promise(r => { const q = tx.objectStore('ced').delete(id); q.onsuccess = () => r(); });
+    }
+    async getSetting(key) {
+        const tx = this.db.transaction('settings', 'readonly');
+        return new Promise(r => { const q = tx.objectStore('settings').get(key); q.onsuccess = () => r(q.result); });
+    }
+    async setSetting(key, value) {
+        const tx = this.db.transaction('settings', 'readwrite');
+        return new Promise(r => { const q = tx.objectStore('settings').put({ key, value }); q.onsuccess = () => r(); });
     }
 }
 
@@ -574,16 +672,90 @@ class App {
         this.parsed = {};
         this.charts = {};
         this.annoFile = null;
+        this.tentativi = 0;
     }
 
     async init() {
         await this.db.init();
-        this.setupNav();
-        this.setupUpload();
-        await this.loadHome();
-        await this.loadStorico();
+        await this.controllaPassword();
     }
 
+    // ======================== PASSWORD ========================
+    async getPassword() {
+        const setting = await this.db.getSetting('password');
+        return setting ? setting.value : '1234';
+    }
+
+    async controllaPassword() {
+        const pw = await this.getPassword();
+        if (!pw || pw === '1234') {
+            // Password predefinita, chiedi di cambiarla
+            this.mostraApp();
+        } else {
+            // Mostra schermata login
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appContent').style.display = 'none';
+        }
+    }
+
+    async verificaPassword() {
+        const input = document.getElementById('passwordInput').value;
+        const pw = await this.getPassword();
+        
+        if (input === pw) {
+            this.mostraApp();
+            this.tentativi = 0;
+            document.getElementById('loginMsg').textContent = '';
+        } else {
+            this.tentativi++;
+            document.getElementById('passwordInput').value = '';
+            
+            if (this.tentativi >= 3) {
+                document.getElementById('loginBtn').disabled = true;
+                document.getElementById('loginMsg').textContent = '🔒 Troppi tentativi. Attendi 30 secondi...';
+                setTimeout(() => {
+                    document.getElementById('loginBtn').disabled = false;
+                    document.getElementById('loginMsg').textContent = '';
+                    this.tentativi = 0;
+                }, 30000);
+            } else {
+                document.getElementById('loginMsg').textContent = `❌ PIN errato. Tentativi: ${this.tentativi}/3`;
+            }
+        }
+    }
+
+    async cambiaPassword() {
+        const vecchia = prompt('Inserisci il PIN attuale:');
+        if (!vecchia) return;
+        const pw = await this.getPassword();
+        if (vecchia !== pw) { alert('❌ PIN attuale errato'); return; }
+        
+        const nuova = prompt('Inserisci il nuovo PIN (4-6 cifre):');
+        if (!nuova || nuova.length < 4 || !/^\d+$/.test(nuova)) {
+            alert('⚠️ Il PIN deve essere di 4-6 cifre numeriche');
+            return;
+        }
+        
+        const conferma = prompt('Conferma il nuovo PIN:');
+        if (nuova !== conferma) { alert('❌ I PIN non coincidono'); return; }
+        
+        await this.db.setSetting('password', nuova);
+        this.toast('✅ PIN aggiornato con successo!');
+    }
+
+    mostraApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        if (!this._inizializzato) {
+            this._inizializzato = true;
+            this.setupNav();
+            this.setupUpload();
+            this.loadHome();
+            this.loadStorico();
+        }
+    }
+
+    // ======================== NAVIGAZIONE ========================
     setupNav() {
         document.querySelectorAll('.nav-btn').forEach(b => {
             b.addEventListener('click', async e => {
@@ -914,42 +1086,12 @@ class App {
             });
             this.charts.c = new Chart(c1, {
                 type:'line', data:{labels:mesi, datasets:[
-                    {
-                        label:''+cy, data:cur,
-                        borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.15)',
-                        fill:true, tension:0.3, borderWidth: 4, pointRadius: 6,
-                        pointBackgroundColor: '#10B981', pointBorderColor: '#fff', pointBorderWidth: 2,
-                        spanGaps:true
-                    },
-                    {
-                        label:''+py, data:prev,
-                        borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,0.1)',
-                        fill:true, tension:0.3, borderWidth: 4, pointRadius: 6,
-                        pointBackgroundColor: '#3B82F6', pointBorderColor: '#fff', pointBorderWidth: 2,
-                        spanGaps:true
-                    }
+                    {label:''+cy, data:cur, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.15)', fill:true, tension:0.3, borderWidth:4, pointRadius:6, pointBackgroundColor:'#10B981', pointBorderColor:'#fff', pointBorderWidth:2, spanGaps:true},
+                    {label:''+py, data:prev, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3, borderWidth:4, pointRadius:6, pointBackgroundColor:'#3B82F6', pointBorderColor:'#fff', pointBorderWidth:2, spanGaps:true}
                 ]},
-                options:{
-                    responsive:true, maintainAspectRatio:false,
-                    plugins: {
-                        legend: { labels: { color: '#FFF', font: { size: 14, weight: 'bold' }, padding: 20 } },
-                        tooltip: {
-                            backgroundColor: '#1A1A1E', titleColor: '#FFF', bodyColor: '#FFF',
-                            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, cornerRadius: 8,
-                            callbacks: { label: ctx => ` ${ctx.dataset.label}: €${ctx.raw?.toLocaleString()||'N/D'}` }
-                        }
-                    },
-                    scales:{
-                        y:{
-                            beginAtZero: false, grace: '10%',
-                            ticks: { callback: v => '€' + v.toLocaleString(), color: '#B0B0B0', font: { size: 12 } },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        },
-                        x:{
-                            ticks: { color: '#B0B0B0', font: { size: 11 } },
-                            grid: { display: false }
-                        }
-                    }
+                options:{responsive:true, maintainAspectRatio:false,
+                    plugins:{legend:{labels:{color:'#FFF',font:{size:14,weight:'bold'},padding:20}}, tooltip:{backgroundColor:'#1A1A1E',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:ctx=>` ${ctx.dataset.label}: €${ctx.raw?.toLocaleString()||'N/D'}`}}},
+                    scales:{y:{beginAtZero:false,grace:'10%',ticks:{callback:v=>'€'+v.toLocaleString(),color:'#B0B0B0',font:{size:12}},grid:{color:'rgba(255,255,255,0.1)'}},x:{ticks:{color:'#B0B0B0',font:{size:11}},grid:{display:false}}}
                 }
             });
         }
@@ -959,32 +1101,9 @@ class App {
             const years = [...new Set(all.map(p=>p.year))].sort();
             const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto+((p.ggLav||0)*8),0));
             this.charts.t = new Chart(c2, {
-                type:'bar', data:{labels:years, datasets:[{
-                    label:'Totale Netto + BP', data:totals,
-                    backgroundColor: years.map(y => y === cy ? 'rgba(16,185,129,0.9)' : 'rgba(59,130,246,0.7)'),
-                    borderRadius: 12, borderSkipped: false,
-                }]},
-                options:{
-                    responsive:true, maintainAspectRatio:false,
-                    plugins:{
-                        legend:{display:false},
-                        tooltip: {
-                            backgroundColor: '#1A1A1E', titleColor: '#FFF', bodyColor: '#FFF',
-                            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, cornerRadius: 8,
-                            callbacks: { label: ctx => ` €${ctx.raw.toLocaleString()}` }
-                        }
-                    },
-                    scales:{
-                        y:{
-                            beginAtZero: false, grace: '5%',
-                            ticks: { callback: v => '€' + (v/1000).toFixed(0) + 'k', color: '#B0B0B0', font: { size: 12 } },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        },
-                        x:{
-                            ticks: { color: '#B0B0B0', font: { size: 12 } },
-                            grid: { display: false }
-                        }
-                    }
+                type:'bar', data:{labels:years, datasets:[{label:'Totale', data:totals, backgroundColor:years.map(y=>y===cy?'rgba(16,185,129,0.9)':'rgba(59,130,246,0.7)'), borderRadius:12, borderSkipped:false}]},
+                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#1A1A1E',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:ctx=>` €${ctx.raw.toLocaleString()}`}}},
+                    scales:{y:{beginAtZero:false,grace:'5%',ticks:{callback:v=>'€'+(v/1000).toFixed(0)+'k',color:'#B0B0B0',font:{size:12}},grid:{color:'rgba(255,255,255,0.1)'}},x:{ticks:{color:'#B0B0B0',font:{size:12}},grid:{display:false}}}
                 }
             });
         }

@@ -365,7 +365,6 @@
             color: var(--blue);
             text-align: center;
         }
-        /* LOGIN */
         .login-screen {
             display: flex;
             flex-direction: column;
@@ -374,69 +373,39 @@
             min-height: 80vh;
             padding: 20px;
         }
-        .login-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-        .login-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .login-subtitle {
-            font-size: 14px;
-            color: var(--text2);
-            margin-bottom: 30px;
-        }
+        .login-icon { font-size: 64px; margin-bottom: 20px; }
+        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .login-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 30px; }
         .login-input {
-            width: 200px;
-            padding: 16px;
-            background: #111;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 14px;
-            color: var(--text);
-            font-size: 28px;
-            text-align: center;
-            font-family: inherit;
-            font-weight: 700;
-            letter-spacing: 8px;
-            margin-bottom: 16px;
+            width: 200px; padding: 16px;
+            background: #111; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 14px; color: var(--text); font-size: 28px;
+            text-align: center; font-family: inherit; font-weight: 700;
+            letter-spacing: 8px; margin-bottom: 16px;
         }
         .login-input:focus { outline: none; border-color: var(--blue); }
         .login-btn {
-            width: 200px;
-            padding: 14px;
-            background: var(--blue);
-            border: none;
-            border-radius: 14px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
+            width: 200px; padding: 14px;
+            background: var(--blue); border: none; border-radius: 14px;
+            color: #fff; font-size: 16px; font-weight: 700;
+            cursor: pointer; font-family: inherit;
         }
         .login-btn:disabled { opacity: 0.4; }
-        .login-msg {
-            font-size: 13px;
-            margin-top: 12px;
-            min-height: 20px;
-            color: var(--red);
+        .login-msg { font-size: 13px; margin-top: 12px; min-height: 20px; color: var(--red); }
+        .chart-select-row {
+            display: flex; gap: 8px; margin-bottom: 10px; align-items: center;
         }
-        .login-cambio {
-            margin-top: 20px;
-            font-size: 11px;
-            color: var(--text2);
+        .chart-select-row select {
+            flex: 1; padding: 8px;
+            background: var(--card); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px;
         }
-        .login-cambio a {
-            color: var(--blue);
-            cursor: pointer;
-            text-decoration: underline;
-        }
+        .chart-select-row span { color: var(--text2); font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
+    <!-- LOGIN -->
     <div id="loginScreen" class="login-screen">
         <div class="login-icon">🔐</div>
         <div class="login-title">Cedolini Pro</div>
@@ -446,14 +415,14 @@
         <div class="login-msg" id="loginMsg"></div>
     </div>
 
-    <!-- APP CONTENT -->
+    <!-- APP -->
     <div id="appContent" style="display:none;">
 
     <header class="header">
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.14</span>
+            <span class="version">Beta 0.15</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -494,49 +463,33 @@
 
     <main id="add" class="screen">
         <div id="uploadSection">
-            <div class="upload-zone" id="upBox">
-                <div class="icon">📄</div><h3>Carica cedolino PDF</h3><p>INAZ - LUL-...pdf</p>
+            <div class="upload-zone" id="upBox"><div class="icon">📄</div><h3>Carica cedolino PDF</h3><p>INAZ - LUL-...pdf</p>
                 <input type="file" id="pdfInput" accept=".pdf" hidden>
                 <button class="btn btn-blue" onclick="document.getElementById('pdfInput').click()">Seleziona file</button>
             </div>
         </div>
         <div id="workSection" style="display:none;">
             <div class="page-nav">
-                <button onclick="app.prevPage()" id="prevBtn">◀ Pag 1</button>
-                <span id="pageInfo">1 / 2</span>
-                <button onclick="app.nextPage()" id="nextBtn">Pag 2 ▶</button>
+                <button onclick="app.prevPage()" id="prevBtn">◀ Pag 1</button><span id="pageInfo">1 / 2</span><button onclick="app.nextPage()" id="nextBtn">Pag 2 ▶</button>
             </div>
             <div class="pdf-box"><canvas id="pdfCanvas"></canvas></div>
             <div class="form-card">
                 <h3>✍️ Dati Cedolino</h3>
                 <p class="form-subtitle" id="formSubtitle">Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.</p>
-                <div id="avvisoAnno" class="avviso-anno" style="display:none;">📌 Anno passato: viene richiesto solo il Netto a Pagare</div>
-                
-                <div class="form-group">
-                    <label class="form-label">🏷️ Tipo Cedolino</label>
+                <div id="avvisoAnno" class="avviso-anno" style="display:none;">📌 Anno passato: solo Netto a Pagare</div>
+                <div class="form-group"><label class="form-label">🏷️ Tipo Cedolino</label>
                     <select id="tipoInput" class="form-select" onchange="app.onTipoChange()">
                         <option value="normale">📅 Stipendio Mensile</option>
                         <option value="tredicesima">🎄 Tredicesima</option>
                         <option value="quattordicesima">🌴 Quattordicesima</option>
                     </select>
                 </div>
-                <div class="form-group" id="meseGroup">
-                    <label class="form-label">📅 Mese</label>
-                    <input type="month" id="meseInput" class="form-input mese">
-                </div>
-                
+                <div class="form-group" id="meseGroup"><label class="form-label">📅 Mese</label><input type="month" id="meseInput" class="form-input mese"></div>
                 <div class="manual-box">
                     <div class="title">✍️ CAMPI MANUALI</div>
-                    <div class="form-group">
-                        <label class="form-label" style="color:var(--orange);">💰 Netto a Pagare</label>
-                        <input type="number" id="nettoInput" class="form-input" step="0.01" required placeholder="Inserisci il netto dal cedolino">
-                    </div>
-                    <div class="form-group" id="ggLavGroup">
-                        <label class="form-label" style="color:var(--orange);">🍽️ Giorni Lavorativi</label>
-                        <input type="number" id="ggLavInput" class="form-input" step="1" placeholder="Conta i giorni dal calendario">
-                    </div>
+                    <div class="form-group"><label class="form-label" style="color:var(--orange);">💰 Netto a Pagare</label><input type="number" id="nettoInput" class="form-input" step="0.01" required placeholder="Inserisci il netto dal cedolino"></div>
+                    <div class="form-group" id="ggLavGroup"><label class="form-label" style="color:var(--orange);">🍽️ Giorni Lavorativi</label><input type="number" id="ggLavInput" class="form-input" step="1" placeholder="Conta i giorni dal calendario"></div>
                 </div>
-
                 <div class="auto-data" id="autoDataBox">
                     <div class="title">🤖 DATI AUTOMATICI DAL PDF</div>
                     <div class="auto-grid">
@@ -546,12 +499,7 @@
                         <div><div class="item-label">⏰ ROL Residui</div><div class="item-value" id="showRolR">--</div></div>
                     </div>
                 </div>
-
-                <input type="hidden" id="ferieGInput">
-                <input type="hidden" id="ferieRInput">
-                <input type="hidden" id="rolGInput">
-                <input type="hidden" id="rolRInput">
-                
+                <input type="hidden" id="ferieGInput"><input type="hidden" id="ferieRInput"><input type="hidden" id="rolGInput"><input type="hidden" id="rolRInput">
                 <button class="btn btn-green" onclick="app.saveData()">💾 Salva Cedolino</button>
                 <button class="btn-outline" onclick="app.annulla()" style="margin-top:8px;">❌ Annulla</button>
             </div>
@@ -561,11 +509,8 @@
             <div class="filter-row">
                 <select id="storicoAnno" onchange="app.loadStorico()">
                     <option value="tutti">Tutti gli anni</option>
-                    <option value="2022">2022</option>
-                    <option value="2023">2023</option>
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026" selected>2026</option>
+                    <option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option>
+                    <option value="2025">2025</option><option value="2026" selected>2026</option>
                 </select>
             </div>
             <div id="storicoContent"></div>
@@ -573,13 +518,24 @@
     </main>
 
     <main id="buonipasto" class="screen"><h3 style="margin-bottom:16px;">🍽️ Buoni Pasto (dal 2026)</h3><div id="bpContent"></div></main>
+    
     <main id="charts" class="screen">
-        <div class="chart-box"><h3>📊 Confronto (Netto + Buoni Pasto): <span id="chartYearCurr"></span> vs <span id="chartYearPrev"></span></h3><div class="chart-inner"><canvas id="compareChart"></canvas></div></div>
-        <div class="chart-box"><h3>📈 Totale Annuale (Netto + Buoni Pasto)</h3><div class="chart-inner"><canvas id="totalChart"></canvas></div></div>
+        <div class="chart-box">
+            <h3>📊 Confronto Mensile</h3>
+            <div class="chart-select-row">
+                <select id="chartYear1" onchange="app.loadCharts()"></select>
+                <span>vs</span>
+                <select id="chartYear2" onchange="app.loadCharts()"></select>
+            </div>
+            <div class="chart-inner"><canvas id="compareChart"></canvas></div>
+        </div>
+        <div class="chart-box">
+            <h3>📈 Confronto TOTALE ANNO</h3>
+            <div class="chart-inner"><canvas id="totalChart"></canvas></div>
+        </div>
     </main>
     <div class="toast" id="toast"></div>
-
-    </div><!-- END APP CONTENT -->
+    </div>
 
 <script>
 // ======================== DATABASE ========================
@@ -587,23 +543,18 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V46', 1);
+            const r = indexedDB.open('CED_V47', 1);
             r.onupgradeneeded = e => {
                 const db = e.target.result;
-                if (!db.objectStoreNames.contains('ced')) {
-                    db.createObjectStore('ced', { keyPath: 'id', autoIncrement: true }).createIndex('ym', 'ym', { unique: true });
-                }
-                if (!db.objectStoreNames.contains('settings')) {
-                    db.createObjectStore('settings', { keyPath: 'key' });
-                }
+                if (!db.objectStoreNames.contains('ced')) db.createObjectStore('ced', { keyPath: 'id', autoIncrement: true }).createIndex('ym', 'ym', { unique: true });
+                if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
             };
             r.onsuccess = e => { this.db = e.target.result; ok(); };
             r.onerror = e => ko(e.target.error);
         });
     }
     async save(d) {
-        const tx = this.db.transaction('ced', 'readwrite');
-        const st = tx.objectStore('ced');
+        const tx = this.db.transaction('ced', 'readwrite'); const st = tx.objectStore('ced');
         const ex = await new Promise(r => { const q = st.index('ym').get(d.ym); q.onsuccess = () => r(q.result); });
         if (ex) d.id = ex.id;
         return new Promise(r => { const q = st.put(d); q.onsuccess = () => r(q.result); });
@@ -613,18 +564,9 @@ class DB {
         const d = await new Promise(r => { const q = tx.objectStore('ced').getAll(); q.onsuccess = () => r(q.result); });
         return d.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
-    async delete(id) {
-        const tx = this.db.transaction('ced', 'readwrite');
-        return new Promise(r => { const q = tx.objectStore('ced').delete(id); q.onsuccess = () => r(); });
-    }
-    async getSetting(key) {
-        const tx = this.db.transaction('settings', 'readonly');
-        return new Promise(r => { const q = tx.objectStore('settings').get(key); q.onsuccess = () => r(q.result); });
-    }
-    async setSetting(key, value) {
-        const tx = this.db.transaction('settings', 'readwrite');
-        return new Promise(r => { const q = tx.objectStore('settings').put({ key, value }); q.onsuccess = () => r(); });
-    }
+    async delete(id) { const tx = this.db.transaction('ced', 'readwrite'); return new Promise(r => { const q = tx.objectStore('ced').delete(id); q.onsuccess = () => r(); }); }
+    async getSetting(key) { const tx = this.db.transaction('settings', 'readonly'); return new Promise(r => { const q = tx.objectStore('settings').get(key); q.onsuccess = () => r(q.result); }); }
+    async setSetting(key, value) { const tx = this.db.transaction('settings', 'readwrite'); return new Promise(r => { const q = tx.objectStore('settings').put({ key, value }); q.onsuccess = () => r(); }); }
 }
 
 // ======================== PARSER ========================
@@ -632,518 +574,166 @@ function parsePage(text) {
     const clean = s => s ? parseFloat(String(s).replace(/\./g, '').replace(',', '.')) || 0 : 0;
     const r = { netto: null, ferieGodute: 0, ferieResidue: 0, rolGoduti: 0, rolResidui: 0 };
     for (const p of [/NETTO\s+A\s+PAGARE\s*\n?\s*([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i, /NETTO\s+A\s+PAGARE[\s\S]{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i]) {
-        const m = text.match(p);
-        if (m && clean(m[1]) > 0) { r.netto = clean(m[1]); break; }
+        const m = text.match(p); if (m && clean(m[1]) > 0) { r.netto = clean(m[1]); break; }
     }
     if (!r.netto) {
         const li = text.indexOf('* LEGENDA');
-        if (li > 0) {
-            const b = text.substring(Math.max(0, li - 300), li);
-            const ns = b.match(/[\d]{1,3}(?:\.[\d]{3})*,\d{2}/g);
-            if (ns && ns.length >= 2) { const ln = clean(ns[ns.length - 1]); if (ln > 100) r.netto = ln; }
-        }
+        if (li > 0) { const b = text.substring(Math.max(0, li - 300), li); const ns = b.match(/[\d]{1,3}(?:\.[\d]{3})*,\d{2}/g); if (ns && ns.length >= 2) { const ln = clean(ns[ns.length - 1]); if (ln > 100) r.netto = ln; } }
     }
-    const fm = text.match(/Ferie\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/);
-    if (fm) { r.ferieGodute = clean(fm[3]); r.ferieResidue = clean(fm[4]); }
-    const rm = text.match(/R\.o\.l\.\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/);
-    if (rm) { r.rolGoduti = clean(rm[3]); r.rolResidui = clean(rm[4]); }
+    const fm = text.match(/Ferie\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/); if (fm) { r.ferieGodute = clean(fm[3]); r.ferieResidue = clean(fm[4]); }
+    const rm = text.match(/R\.o\.l\.\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/); if (rm) { r.rolGoduti = clean(rm[3]); r.rolResidui = clean(rm[4]); }
     return r;
 }
-
 async function parseBothPages(pagesText) {
     const r = { netto: null, ferieGodute: 0, ferieResidue: 0, rolGoduti: 0, rolResidui: 0 };
-    for (let i = 0; i < pagesText.length; i++) {
-        const p = parsePage(pagesText[i]);
-        if (r.netto === null && p.netto !== null && p.netto > 0) r.netto = p.netto;
-        if (r.ferieGodute === 0 && p.ferieGodute > 0) { r.ferieGodute = p.ferieGodute; r.ferieResidue = p.ferieResidue; }
-        if (r.rolGoduti === 0 && p.rolGoduti > 0) { r.rolGoduti = p.rolGoduti; r.rolResidui = p.rolResidui; }
-    }
+    for (let i = 0; i < pagesText.length; i++) { const p = parsePage(pagesText[i]); if (r.netto === null && p.netto !== null && p.netto > 0) r.netto = p.netto; if (r.ferieGodute === 0 && p.ferieGodute > 0) { r.ferieGodute = p.ferieGodute; r.ferieResidue = p.ferieResidue; } if (r.rolGoduti === 0 && p.rolGoduti > 0) { r.rolGoduti = p.rolGoduti; r.rolResidui = p.rolResidui; } }
     return r;
 }
 
 // ======================== APP ========================
 class App {
     constructor() {
-        this.db = new DB();
-        this.pdfDoc = null;
-        this.currentPage = 1;
-        this.totalPages = 0;
-        this.pagesText = [];
-        this.parsed = {};
-        this.charts = {};
-        this.annoFile = null;
-        this.tentativi = 0;
+        this.db = new DB(); this.pdfDoc = null; this.currentPage = 1; this.totalPages = 0;
+        this.pagesText = []; this.parsed = {}; this.charts = {}; this.annoFile = null; this.tentativi = 0;
     }
+    async init() { await this.db.init(); await this.controllaPassword(); }
 
-    async init() {
-        await this.db.init();
-        await this.controllaPassword();
-    }
-
-    // ======================== PASSWORD ========================
-    async getPassword() {
-        const setting = await this.db.getSetting('password');
-        return setting ? setting.value : '1234';
-    }
-
+    async getPassword() { const s = await this.db.getSetting('password'); return s ? s.value : '1234'; }
     async controllaPassword() {
         const pw = await this.getPassword();
-        if (!pw || pw === '1234') {
-            // Password predefinita, chiedi di cambiarla
-            this.mostraApp();
-        } else {
-            // Mostra schermata login
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('appContent').style.display = 'none';
-        }
+        if (!pw || pw === '1234') { this.mostraApp(); }
+        else { document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('appContent').style.display = 'none'; }
     }
-
     async verificaPassword() {
-        const input = document.getElementById('passwordInput').value;
-        const pw = await this.getPassword();
-        
-        if (input === pw) {
-            this.mostraApp();
-            this.tentativi = 0;
-            document.getElementById('loginMsg').textContent = '';
-        } else {
-            this.tentativi++;
-            document.getElementById('passwordInput').value = '';
-            
-            if (this.tentativi >= 3) {
-                document.getElementById('loginBtn').disabled = true;
-                document.getElementById('loginMsg').textContent = '🔒 Troppi tentativi. Attendi 30 secondi...';
-                setTimeout(() => {
-                    document.getElementById('loginBtn').disabled = false;
-                    document.getElementById('loginMsg').textContent = '';
-                    this.tentativi = 0;
-                }, 30000);
-            } else {
-                document.getElementById('loginMsg').textContent = `❌ PIN errato. Tentativi: ${this.tentativi}/3`;
-            }
+        const input = document.getElementById('passwordInput').value; const pw = await this.getPassword();
+        if (input === pw) { this.mostraApp(); this.tentativi = 0; document.getElementById('loginMsg').textContent = ''; }
+        else {
+            this.tentativi++; document.getElementById('passwordInput').value = '';
+            if (this.tentativi >= 3) { document.getElementById('loginBtn').disabled = true; document.getElementById('loginMsg').textContent = '🔒 Troppi tentativi. Attendi 30 secondi...'; setTimeout(() => { document.getElementById('loginBtn').disabled = false; document.getElementById('loginMsg').textContent = ''; this.tentativi = 0; }, 30000); }
+            else { document.getElementById('loginMsg').textContent = `❌ PIN errato. Tentativi: ${this.tentativi}/3`; }
         }
     }
-
     async cambiaPassword() {
-        const vecchia = prompt('Inserisci il PIN attuale:');
-        if (!vecchia) return;
-        const pw = await this.getPassword();
-        if (vecchia !== pw) { alert('❌ PIN attuale errato'); return; }
-        
-        const nuova = prompt('Inserisci il nuovo PIN (4-6 cifre):');
-        if (!nuova || nuova.length < 4 || !/^\d+$/.test(nuova)) {
-            alert('⚠️ Il PIN deve essere di 4-6 cifre numeriche');
-            return;
-        }
-        
-        const conferma = prompt('Conferma il nuovo PIN:');
-        if (nuova !== conferma) { alert('❌ I PIN non coincidono'); return; }
-        
-        await this.db.setSetting('password', nuova);
-        this.toast('✅ PIN aggiornato con successo!');
+        const vecchia = prompt('Inserisci il PIN attuale:'); if (!vecchia) return;
+        const pw = await this.getPassword(); if (vecchia !== pw) { alert('❌ PIN attuale errato'); return; }
+        const nuova = prompt('Inserisci il nuovo PIN (4-6 cifre):'); if (!nuova || nuova.length < 4 || !/^\d+$/.test(nuova)) { alert('⚠️ Il PIN deve essere di 4-6 cifre numeriche'); return; }
+        const conferma = prompt('Conferma il nuovo PIN:'); if (nuova !== conferma) { alert('❌ I PIN non coincidono'); return; }
+        await this.db.setSetting('password', nuova); this.toast('✅ PIN aggiornato!');
     }
-
     mostraApp() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-        if (!this._inizializzato) {
-            this._inizializzato = true;
-            this.setupNav();
-            this.setupUpload();
-            this.loadHome();
-            this.loadStorico();
-        }
+        document.getElementById('loginScreen').style.display = 'none'; document.getElementById('appContent').style.display = 'block';
+        if (!this._inizializzato) { this._inizializzato = true; this.setupNav(); this.setupUpload(); this.loadHome(); this.loadStorico(); }
     }
 
-    // ======================== NAVIGAZIONE ========================
     setupNav() {
-        document.querySelectorAll('.nav-btn').forEach(b => {
-            b.addEventListener('click', async e => {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
-                document.getElementById(e.target.dataset.scr)?.classList.add('active');
-                e.target.classList.add('active');
-                if (e.target.dataset.scr === 'home') await this.loadHome();
-                if (e.target.dataset.scr === 'add') await this.loadStorico();
-                if (e.target.dataset.scr === 'buonipasto') await this.loadBP();
-                if (e.target.dataset.scr === 'charts') await this.loadCharts();
-            });
-        });
+        document.querySelectorAll('.nav-btn').forEach(b => { b.addEventListener('click', async e => { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active')); document.getElementById(e.target.dataset.scr)?.classList.add('active'); e.target.classList.add('active'); if (e.target.dataset.scr === 'home') await this.loadHome(); if (e.target.dataset.scr === 'add') await this.loadStorico(); if (e.target.dataset.scr === 'buonipasto') await this.loadBP(); if (e.target.dataset.scr === 'charts') await this.loadCharts(); }); });
     }
-
     setupUpload() {
-        const inp = document.getElementById('pdfInput');
-        const upBox = document.getElementById('upBox');
+        const inp = document.getElementById('pdfInput'); const upBox = document.getElementById('upBox');
         upBox.addEventListener('dragover', e => e.preventDefault());
-        upBox.addEventListener('drop', async e => {
-            e.preventDefault();
-            const f = e.dataTransfer.files[0];
-            if (f?.type === 'application/pdf') await this.loadPDF(f);
-        });
+        upBox.addEventListener('drop', async e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type === 'application/pdf') await this.loadPDF(f); });
         inp.addEventListener('change', async e => { if (e.target.files[0]) await this.loadPDF(e.target.files[0]); });
     }
-
     onTipoChange() {
         const tipo = document.getElementById('tipoInput').value;
-        if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
-            document.getElementById('meseGroup').style.display = 'none';
-            document.getElementById('ggLavGroup').style.display = 'none';
-            document.getElementById('autoDataBox').style.display = 'none';
-        } else {
-            document.getElementById('meseGroup').style.display = 'block';
-            document.getElementById('ggLavGroup').style.display = 'block';
-            document.getElementById('autoDataBox').style.display = 'block';
-        }
+        if (tipo === 'tredicesima' || tipo === 'quattordicesima') { document.getElementById('meseGroup').style.display = 'none'; document.getElementById('ggLavGroup').style.display = 'none'; document.getElementById('autoDataBox').style.display = 'none'; }
+        else { document.getElementById('meseGroup').style.display = 'block'; document.getElementById('ggLavGroup').style.display = 'block'; document.getElementById('autoDataBox').style.display = 'block'; }
     }
-
     async loadPDF(file) {
-        this.toast('📄 Analisi...');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        const buf = await file.arrayBuffer();
-        this.pdfDoc = await pdfjsLib.getDocument(new Uint8Array(buf)).promise;
-        this.totalPages = this.pdfDoc.numPages;
-        this.currentPage = 1;
-        this.pagesText = [];
-        for (let i = 1; i <= this.pdfDoc.numPages; i++) {
-            const page = await this.pdfDoc.getPage(i);
-            const c = await page.getTextContent();
-            let lastY = null, pt = '';
-            for (const it of c.items) {
-                const y = Math.round(it.transform[5]);
-                if (lastY !== null && Math.abs(y - lastY) > 8) pt += '\n';
-                else if (pt && !pt.endsWith(' ') && !pt.endsWith('\n')) pt += ' ';
-                pt += it.str;
-                lastY = y;
-            }
-            this.pagesText.push(pt);
-        }
+        this.toast('📄 Analisi...'); pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buf = await file.arrayBuffer(); this.pdfDoc = await pdfjsLib.getDocument(new Uint8Array(buf)).promise; this.totalPages = this.pdfDoc.numPages; this.currentPage = 1; this.pagesText = [];
+        for (let i = 1; i <= this.pdfDoc.numPages; i++) { const page = await this.pdfDoc.getPage(i); const c = await page.getTextContent(); let lastY = null, pt = ''; for (const it of c.items) { const y = Math.round(it.transform[5]); if (lastY !== null && Math.abs(y - lastY) > 8) pt += '\n'; else if (pt && !pt.endsWith(' ') && !pt.endsWith('\n')) pt += ' '; pt += it.str; lastY = y; } this.pagesText.push(pt); }
         this.parsed = await parseBothPages(this.pagesText);
-
-        const dm = file.name.match(/-(\d{2})-(\d{4})-/);
-        this.annoFile = dm ? parseInt(dm[2]) : new Date().getFullYear();
-        
+        const dm = file.name.match(/-(\d{2})-(\d{4})-/); this.annoFile = dm ? parseInt(dm[2]) : new Date().getFullYear();
         const tipo = document.getElementById('tipoInput').value;
-        if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
-            document.getElementById('meseInput').value = '';
-        } else if (dm) {
-            document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
-        }
-
-        const annoCorrente = new Date().getFullYear();
-        const isAnnoCorrente = this.annoFile === annoCorrente;
-
-        document.getElementById('nettoInput').value = '';
-        document.getElementById('ggLavInput').value = '';
-
-        document.getElementById('meseGroup').style.display = 'block';
-        document.getElementById('ggLavGroup').style.display = 'block';
-        document.getElementById('autoDataBox').style.display = 'block';
-
+        if (tipo === 'tredicesima' || tipo === 'quattordicesima') { document.getElementById('meseInput').value = ''; }
+        else if (dm) { document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`; }
+        const annoCorrente = new Date().getFullYear(); const isAnnoCorrente = this.annoFile === annoCorrente;
+        document.getElementById('nettoInput').value = ''; document.getElementById('ggLavInput').value = '';
+        document.getElementById('meseGroup').style.display = 'block'; document.getElementById('ggLavGroup').style.display = 'block'; document.getElementById('autoDataBox').style.display = 'block';
         if (isAnnoCorrente) {
-            document.getElementById('avvisoAnno').style.display = 'none';
-            document.getElementById('formSubtitle').textContent = 'Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.';
-
-            document.getElementById('ferieGInput').value = (this.parsed.ferieGodute || 0).toFixed(2);
-            document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2);
-            document.getElementById('rolGInput').value = (this.parsed.rolGoduti || 0).toFixed(2);
-            document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
-
-            document.getElementById('showFerieG').textContent = (this.parsed.ferieGodute || 0).toFixed(2) + ' gg';
-            document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg';
-            document.getElementById('showRolG').textContent = (this.parsed.rolGoduti || 0).toFixed(2) + ' ore';
-            document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
+            document.getElementById('avvisoAnno').style.display = 'none'; document.getElementById('formSubtitle').textContent = 'Netto e Giorni Lavorativi manuali. Il resto è automatico dal PDF.';
+            document.getElementById('ferieGInput').value = (this.parsed.ferieGodute || 0).toFixed(2); document.getElementById('ferieRInput').value = (this.parsed.ferieResidue || 0).toFixed(2); document.getElementById('rolGInput').value = (this.parsed.rolGoduti || 0).toFixed(2); document.getElementById('rolRInput').value = (this.parsed.rolResidui || 0).toFixed(2);
+            document.getElementById('showFerieG').textContent = (this.parsed.ferieGodute || 0).toFixed(2) + ' gg'; document.getElementById('showFerieR').textContent = (this.parsed.ferieResidue || 0).toFixed(2) + ' gg'; document.getElementById('showRolG').textContent = (this.parsed.rolGoduti || 0).toFixed(2) + ' ore'; document.getElementById('showRolR').textContent = (this.parsed.rolResidui || 0).toFixed(2) + ' ore';
         } else {
-            document.getElementById('avvisoAnno').style.display = 'block';
-            document.getElementById('ggLavGroup').style.display = 'none';
-            document.getElementById('autoDataBox').style.display = 'none';
-            document.getElementById('formSubtitle').textContent = 'Anno passato: inserisci solo il Netto a Pagare.';
-
-            document.getElementById('ferieGInput').value = '0';
-            document.getElementById('ferieRInput').value = '0';
-            document.getElementById('rolGInput').value = '0';
-            document.getElementById('rolRInput').value = '0';
-            document.getElementById('ggLavInput').value = '0';
+            document.getElementById('avvisoAnno').style.display = 'block'; document.getElementById('ggLavGroup').style.display = 'none'; document.getElementById('autoDataBox').style.display = 'none'; document.getElementById('formSubtitle').textContent = 'Anno passato: inserisci solo il Netto a Pagare.';
+            document.getElementById('ferieGInput').value = '0'; document.getElementById('ferieRInput').value = '0'; document.getElementById('rolGInput').value = '0'; document.getElementById('rolRInput').value = '0'; document.getElementById('ggLavInput').value = '0';
         }
-
-        this.onTipoChange();
-
-        document.getElementById('uploadSection').style.display = 'none';
-        document.getElementById('workSection').style.display = 'block';
-        await this.renderPage();
-        this.toast('✅ Pronto!');
+        this.onTipoChange(); document.getElementById('uploadSection').style.display = 'none'; document.getElementById('workSection').style.display = 'block'; await this.renderPage(); this.toast('✅ Pronto!');
     }
-
     async renderPage() {
-        if (!this.pdfDoc) return;
-        const page = await this.pdfDoc.getPage(this.currentPage);
-        const vp = page.getViewport({ scale: 1.5 });
-        const canvas = document.getElementById('pdfCanvas');
-        canvas.height = vp.height;
-        canvas.width = vp.width;
+        if (!this.pdfDoc) return; const page = await this.pdfDoc.getPage(this.currentPage); const vp = page.getViewport({ scale: 1.5 }); const canvas = document.getElementById('pdfCanvas'); canvas.height = vp.height; canvas.width = vp.width;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-        document.getElementById('pageInfo').textContent = `${this.currentPage} / ${this.totalPages}`;
-        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
-        document.getElementById('nextBtn').disabled = this.currentPage >= this.totalPages;
+        document.getElementById('pageInfo').textContent = `${this.currentPage} / ${this.totalPages}`; document.getElementById('prevBtn').disabled = this.currentPage <= 1; document.getElementById('nextBtn').disabled = this.currentPage >= this.totalPages;
     }
-
     prevPage() { if (this.currentPage > 1) { this.currentPage--; this.renderPage(); } }
     nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; this.renderPage(); } }
-
-    annulla() {
-        if (confirm('Sei sicuro?')) {
-            this.pdfDoc = null; this.pagesText = []; this.annoFile = null;
-            document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
-            document.getElementById('uploadSection').style.display = 'block';
-            document.getElementById('workSection').style.display = 'none';
-            this.toast('❌ Annullato');
-        }
-    }
-
+    annulla() { if (confirm('Sei sicuro?')) { this.pdfDoc = null; this.pagesText = []; this.annoFile = null; document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; }); document.getElementById('uploadSection').style.display = 'block'; document.getElementById('workSection').style.display = 'none'; this.toast('❌ Annullato'); } }
     async saveData() {
-        const tipo = document.getElementById('tipoInput').value;
-        let meseRif, annoRif, ym;
-        
-        if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
-            annoRif = this.annoFile || new Date().getFullYear();
-            meseRif = tipo === 'tredicesima' ? 11 : 5;
-            ym = tipo === 'tredicesima' ? `13-${annoRif}` : `14-${annoRif}`;
-        } else {
-            const mese = document.getElementById('meseInput').value;
-            if (!mese) return alert('⚠️ Manca il mese');
-            const d = new Date(mese + '-01');
-            meseRif = d.getMonth();
-            annoRif = d.getFullYear();
-            ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        }
-        
+        const tipo = document.getElementById('tipoInput').value; let meseRif, annoRif, ym;
+        if (tipo === 'tredicesima' || tipo === 'quattordicesima') { annoRif = this.annoFile || new Date().getFullYear(); meseRif = tipo === 'tredicesima' ? 11 : 5; ym = tipo === 'tredicesima' ? `13-${annoRif}` : `14-${annoRif}`; }
+        else { const mese = document.getElementById('meseInput').value; if (!mese) return alert('⚠️ Manca il mese'); const d = new Date(mese + '-01'); meseRif = d.getMonth(); annoRif = d.getFullYear(); ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
         const dataRef = new Date(annoRif, meseRif, 1);
-        
-        const data = {
-            ym: ym,
-            date: dataRef.toISOString(), competenza: dataRef.toISOString(),
-            year: annoRif, month: meseRif,
-            netto: +document.getElementById('nettoInput').value || 0,
-            ferieGodute: +document.getElementById('ferieGInput').value || 0,
-            ferieResidue: +document.getElementById('ferieRInput').value || 0,
-            rolGoduti: +document.getElementById('rolGInput').value || 0,
-            rolResidui: +document.getElementById('rolRInput').value || 0,
-            ggLav: +document.getElementById('ggLavInput').value || 0,
-            tipo: tipo
-        };
-        if (!data.netto) return alert('⚠️ Netto obbligatorio');
-        await this.db.save(data);
-        this.toast('✅ Salvato!');
-        this.pdfDoc = null; this.pagesText = []; this.annoFile = null;
-        document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; });
-        document.getElementById('uploadSection').style.display = 'block';
-        document.getElementById('workSection').style.display = 'none';
-        await this.loadStorico();
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
-        document.getElementById('home').classList.add('active');
-        document.querySelector('[data-scr="home"]').classList.add('active');
-        await this.loadHome();
+        const data = { ym, date: dataRef.toISOString(), competenza: dataRef.toISOString(), year: annoRif, month: meseRif, netto: +document.getElementById('nettoInput').value || 0, ferieGodute: +document.getElementById('ferieGInput').value || 0, ferieResidue: +document.getElementById('ferieRInput').value || 0, rolGoduti: +document.getElementById('rolGInput').value || 0, rolResidui: +document.getElementById('rolRInput').value || 0, ggLav: +document.getElementById('ggLavInput').value || 0, tipo };
+        if (!data.netto) return alert('⚠️ Netto obbligatorio'); await this.db.save(data); this.toast('✅ Salvato!');
+        this.pdfDoc = null; this.pagesText = []; this.annoFile = null; document.querySelectorAll('#workSection input').forEach(i => { i.value = ''; }); document.getElementById('uploadSection').style.display = 'block'; document.getElementById('workSection').style.display = 'none';
+        await this.loadStorico(); document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active')); document.getElementById('home').classList.add('active'); document.querySelector('[data-scr="home"]').classList.add('active'); await this.loadHome();
     }
-
     async loadHome() {
-        const all = await this.db.all();
-        if (!all.length) return;
-        const last = all[0];
-        document.getElementById('hNetto').textContent = `€${last.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
-        document.getElementById('hMese').textContent = new Date(last.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-        const tipoLabel = last.tipo === 'tredicesima' ? '🎄 Tredicesima' : last.tipo === 'quattordicesima' ? '🌴 Quattordicesima' : `Ferie: ${last.ferieGodute}gg | ROL: ${last.rolGoduti}h`;
-        document.getElementById('hDate').textContent = tipoLabel;
-        document.getElementById('hInfo').textContent = last.tipo === 'normale' ? `Lavorativi: ${last.ggLav}` : 'Cedolino extra';
-
-        const cy = new Date().getFullYear();
-        const yd = all.filter(p => p.year === cy);
-        const normali = yd.filter(p => p.tipo === 'normale');
-        const tred = yd.filter(p => p.tipo === 'tredicesima');
-        const quatt = yd.filter(p => p.tipo === 'quattordicesima');
-        const totNormali = normali.reduce((s, p) => s + p.netto, 0);
-        const totTred = tred.reduce((s, p) => s + p.netto, 0);
-        const totQuatt = quatt.reduce((s, p) => s + p.netto, 0);
-        const tot = totNormali + totTred + totQuatt;
-
-        document.getElementById('totaleNetto').textContent = `€${tot.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
-        document.getElementById('totaleMesi').textContent = `${normali.length}/12`;
-        document.getElementById('totaleInfo').innerHTML = `${normali.length} stipendi: €${totNormali.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
-
-        let badges = '';
-        if (totTred > 0) badges += `<span class="extra-badge">🎄 13ª: €${totTred.toLocaleString('it-IT',{minimumFractionDigits:2})}</span> `;
-        if (totQuatt > 0) badges += `<span class="extra-badge">🌴 14ª: €${totQuatt.toLocaleString('it-IT',{minimumFractionDigits:2})}</span>`;
-        document.getElementById('extraBadges').innerHTML = badges;
-
-        const grid = document.getElementById('monthGrid');
-        grid.innerHTML = '';
-        const mc = normali.map(p => p.month);
-        for (let i = 0; i < 12; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'month-cell ' + (mc.includes(i) ? 'filled' : 'empty');
-            cell.textContent = ['G','F','M','A','M','G','L','A','S','O','N','D'][i];
-            grid.appendChild(cell);
-        }
-
-        const lastNormale = normali.length ? normali[0] : last;
-        const ferieGod = lastNormale.ferieGodute || 0;
-        const ferieRes = lastNormale.ferieResidue || 0;
-        const ferieTot = ferieGod + ferieRes;
-        document.getElementById('fBar').style.width = ferieTot > 0 ? (ferieGod / ferieTot * 100) + '%' : '0%';
-        document.getElementById('fGod').textContent = ferieGod + ' gg';
-        document.getElementById('fRes').textContent = ferieRes + ' gg';
-
-        const rolGod = lastNormale.rolGoduti || 0;
-        const rolRes = lastNormale.rolResidui || 0;
-        const rolTot = rolGod + rolRes;
-        document.getElementById('rBar').style.width = rolTot > 0 ? (rolGod / rolTot * 100) + '%' : '0%';
-        document.getElementById('rGod').textContent = rolGod + ' ore';
-        document.getElementById('rRes').textContent = rolRes + ' ore';
-
-        const bpTot = normali.filter(p => p.year >= 2026).reduce((s, p) => s + (p.ggLav || 0), 0);
-        const bpImp = bpTot * 8;
-        document.getElementById('bpPreview').innerHTML = `
-            <div class="bp-highlight"><span>🍽️ ${bpTot} buoni (dal 2026)</span><span>€${bpImp.toFixed(2)}</span></div>
-            <div style="font-size:11px; color:var(--text2); margin-top:4px;">Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})</div>`;
+        const all = await this.db.all(); if (!all.length) return; const last = all[0];
+        document.getElementById('hNetto').textContent = `€${last.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}`; document.getElementById('hMese').textContent = new Date(last.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'}); const tipoLabel = last.tipo === 'tredicesima' ? '🎄 Tredicesima' : last.tipo === 'quattordicesima' ? '🌴 Quattordicesima' : `Ferie: ${last.ferieGodute}gg | ROL: ${last.rolGoduti}h`; document.getElementById('hDate').textContent = tipoLabel; document.getElementById('hInfo').textContent = last.tipo === 'normale' ? `Lavorativi: ${last.ggLav}` : 'Cedolino extra';
+        const cy = new Date().getFullYear(); const yd = all.filter(p => p.year === cy); const normali = yd.filter(p => p.tipo === 'normale'); const tred = yd.filter(p => p.tipo === 'tredicesima'); const quatt = yd.filter(p => p.tipo === 'quattordicesima');
+        const totNormali = normali.reduce((s, p) => s + p.netto, 0); const totTred = tred.reduce((s, p) => s + p.netto, 0); const totQuatt = quatt.reduce((s, p) => s + p.netto, 0); const tot = totNormali + totTred + totQuatt;
+        document.getElementById('totaleNetto').textContent = `€${tot.toLocaleString('it-IT',{minimumFractionDigits:2})}`; document.getElementById('totaleMesi').textContent = `${normali.length}/12`; document.getElementById('totaleInfo').innerHTML = `${normali.length} stipendi: €${totNormali.toLocaleString('it-IT',{minimumFractionDigits:2})}`;
+        let badges = ''; if (totTred > 0) badges += `<span class="extra-badge">🎄 13ª: €${totTred.toLocaleString('it-IT',{minimumFractionDigits:2})}</span> `; if (totQuatt > 0) badges += `<span class="extra-badge">🌴 14ª: €${totQuatt.toLocaleString('it-IT',{minimumFractionDigits:2})}</span>`; document.getElementById('extraBadges').innerHTML = badges;
+        const grid = document.getElementById('monthGrid'); grid.innerHTML = ''; const mc = normali.map(p => p.month); for (let i = 0; i < 12; i++) { const cell = document.createElement('div'); cell.className = 'month-cell ' + (mc.includes(i) ? 'filled' : 'empty'); cell.textContent = ['G','F','M','A','M','G','L','A','S','O','N','D'][i]; grid.appendChild(cell); }
+        const lastNormale = normali.length ? normali[0] : last; const ferieGod = lastNormale.ferieGodute || 0; const ferieRes = lastNormale.ferieResidue || 0; const ferieTot = ferieGod + ferieRes; document.getElementById('fBar').style.width = ferieTot > 0 ? (ferieGod / ferieTot * 100) + '%' : '0%'; document.getElementById('fGod').textContent = ferieGod + ' gg'; document.getElementById('fRes').textContent = ferieRes + ' gg';
+        const rolGod = lastNormale.rolGoduti || 0; const rolRes = lastNormale.rolResidui || 0; const rolTot = rolGod + rolRes; document.getElementById('rBar').style.width = rolTot > 0 ? (rolGod / rolTot * 100) + '%' : '0%'; document.getElementById('rGod').textContent = rolGod + ' ore'; document.getElementById('rRes').textContent = rolRes + ' ore';
+        const bpTot = normali.filter(p => p.year >= 2026).reduce((s, p) => s + (p.ggLav || 0), 0); const bpImp = bpTot * 8;
+        document.getElementById('bpPreview').innerHTML = `<div class="bp-highlight"><span>🍽️ ${bpTot} buoni (dal 2026)</span><span>€${bpImp.toFixed(2)}</span></div><div style="font-size:11px; color:var(--text2); margin-top:4px;">Ultimo: ${lastNormale.ggLav||0} gg (€${((lastNormale.ggLav||0)*8).toFixed(2)})</div>`;
     }
-
     async loadStorico() {
-        const all = await this.db.all();
-        const c = document.getElementById('storicoContent');
-        if (!c) return;
-        if (!all.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:20px;">Nessun cedolino caricato</p>'; return; }
-
-        const anno = document.getElementById('storicoAnno').value;
-        let filtered = all;
-        if (anno !== 'tutti') filtered = all.filter(p => p.year === parseInt(anno));
-
-        let h = '';
-        for (const p of filtered) {
-            const tipoLabel = p.tipo === 'tredicesima' ? '🎄 13ª' : p.tipo === 'quattordicesima' ? '🌴 14ª' : '';
-            h += `<div class="storico-item">
-                <div>
-                    <div class="mese">${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
-                    ${tipoLabel ? `<div class="tipo">${tipoLabel}</div>` : ''}
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="netto">€${p.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}</div>
-                    <button class="delete-btn" onclick="app.eliminaCedolino(${p.id})">🗑</button>
-                </div>
-            </div>`;
-        }
+        const all = await this.db.all(); const c = document.getElementById('storicoContent'); if (!c) return; if (!all.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:20px;">Nessun cedolino caricato</p>'; return; }
+        const anno = document.getElementById('storicoAnno').value; let filtered = all; if (anno !== 'tutti') filtered = all.filter(p => p.year === parseInt(anno));
+        let h = ''; for (const p of filtered) { const tipoLabel = p.tipo === 'tredicesima' ? '🎄 13ª' : p.tipo === 'quattordicesima' ? '🌴 14ª' : ''; h += `<div class="storico-item"><div><div class="mese">${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>${tipoLabel?`<div class="tipo">${tipoLabel}</div>`:''}</div><div style="display:flex;align-items:center;gap:12px;"><div class="netto">€${p.netto.toLocaleString('it-IT',{minimumFractionDigits:2})}</div><button class="delete-btn" onclick="app.eliminaCedolino(${p.id})">🗑</button></div></div>`; }
         c.innerHTML = h || '<p style="text-align:center;color:var(--text2);padding:20px;">Nessun cedolino per questo anno</p>';
     }
-
-    async eliminaCedolino(id) {
-        if (confirm('Eliminare questo cedolino?')) {
-            await this.db.delete(id);
-            this.toast('🗑️ Cedolino eliminato');
-            await this.loadStorico();
-            await this.loadHome();
-        }
-    }
-
+    async eliminaCedolino(id) { if (confirm('Eliminare?')) { await this.db.delete(id); this.toast('🗑️ Eliminato'); await this.loadStorico(); await this.loadHome(); } }
     async loadBP() {
-        const all = await this.db.all();
-        const c = document.getElementById('bpContent');
-        const normali = all.filter(p => (p.tipo === 'normale' || !p.tipo) && p.year >= 2026);
-        if (!normali.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino dal 2026</p>'; return; }
-        let tb = 0, ti = 0, h = '';
-        for (const p of normali) {
-            if (p.ggLav > 0) {
-                tb += p.ggLav; ti += p.ggLav * 8;
-                h += `<div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div>
-                    <div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div></div>`;
-            }
-        }
-        h += `<div class="prog-card" style="border:2px solid var(--orange);"><div class="bp-highlight" style="font-size:18px;"><span>🍽️ Totale</span><span>${tb} buoni = €${ti.toFixed(2)}</span></div></div>`;
-        c.innerHTML = h;
+        const all = await this.db.all(); const c = document.getElementById('bpContent'); const normali = all.filter(p => (p.tipo === 'normale' || !p.tipo) && p.year >= 2026); if (!normali.length) { c.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px;">Nessun cedolino dal 2026</p>'; return; }
+        let tb = 0, ti = 0, h = ''; for (const p of normali) { if (p.ggLav > 0) { tb += p.ggLav; ti += p.ggLav * 8; h += `<div class="prog-card"><div class="prog-head"><div class="prog-icon bp">🍽️</div>${new Date(p.date).toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div><div class="bp-highlight"><span>${p.ggLav} giorni</span><span>€${(p.ggLav*8).toFixed(2)}</span></div></div>`; } }
+        h += `<div class="prog-card" style="border:2px solid var(--orange);"><div class="bp-highlight" style="font-size:18px;"><span>🍽️ Totale</span><span>${tb} buoni = €${ti.toFixed(2)}</span></div></div>`; c.innerHTML = h;
     }
-
     async loadCharts() {
-        const all = await this.db.all();
-        if (!all.length) return;
-        const cy = new Date().getFullYear(), py = cy - 1;
+        const all = await this.db.all(); if (!all.length) return;
+        const years = [...new Set(all.map(p => p.year))].sort((a,b) => b-a);
+        const sel1 = document.getElementById('chartYear1'); const sel2 = document.getElementById('chartYear2');
+        if (sel1.options.length === 0) { sel1.innerHTML = years.map(y => `<option value="${y}" ${y===new Date().getFullYear()?'selected':''}>${y}</option>`).join(''); sel2.innerHTML = years.map(y => `<option value="${y}" ${y===new Date().getFullYear()-1?'selected':''}>${y}</option>`).join(''); }
+        const cy = parseInt(sel1.value); const py = parseInt(sel2.value);
         const dc = all.filter(p => p.year === cy), dp = all.filter(p => p.year === py);
-        document.getElementById('chartYearCurr').textContent = cy;
-        document.getElementById('chartYearPrev').textContent = py;
-        
         const c1 = document.getElementById('compareChart')?.getContext('2d');
         if (c1) {
             if (this.charts.c) this.charts.c.destroy();
-            const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic','13ª','14ª'];
-            const cur = new Array(14).fill(null), prev = new Array(14).fill(null);
-            dc.forEach(p => {
-                const valore = p.netto + ((p.ggLav || 0) * 8);
-                if (p.tipo === 'tredicesima') cur[12] = (cur[12]||0) + valore;
-                else if (p.tipo === 'quattordicesima') cur[13] = (cur[13]||0) + valore;
-                else cur[p.month] = (cur[p.month]||0) + valore;
-            });
-            dp.forEach(p => {
-                const valore = p.netto + ((p.ggLav || 0) * 8);
-                if (p.tipo === 'tredicesima') prev[12] = (prev[12]||0) + valore;
-                else if (p.tipo === 'quattordicesima') prev[13] = (prev[13]||0) + valore;
-                else prev[p.month] = (prev[p.month]||0) + valore;
-            });
-            this.charts.c = new Chart(c1, {
-                type:'line', data:{labels:mesi, datasets:[
-                    {label:''+cy, data:cur, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.15)', fill:true, tension:0.3, borderWidth:4, pointRadius:6, pointBackgroundColor:'#10B981', pointBorderColor:'#fff', pointBorderWidth:2, spanGaps:true},
-                    {label:''+py, data:prev, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3, borderWidth:4, pointRadius:6, pointBackgroundColor:'#3B82F6', pointBorderColor:'#fff', pointBorderWidth:2, spanGaps:true}
-                ]},
-                options:{responsive:true, maintainAspectRatio:false,
-                    plugins:{legend:{labels:{color:'#FFF',font:{size:14,weight:'bold'},padding:20}}, tooltip:{backgroundColor:'#1A1A1E',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:ctx=>` ${ctx.dataset.label}: €${ctx.raw?.toLocaleString()||'N/D'}`}}},
-                    scales:{y:{beginAtZero:false,grace:'10%',ticks:{callback:v=>'€'+v.toLocaleString(),color:'#B0B0B0',font:{size:12}},grid:{color:'rgba(255,255,255,0.1)'}},x:{ticks:{color:'#B0B0B0',font:{size:11}},grid:{display:false}}}
-                }
+            const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic','13ª','14ª']; const cur = new Array(14).fill(null), prev = new Array(14).fill(null);
+            dc.forEach(p => { const v = p.netto + ((p.ggLav||0)*8); if (p.tipo==='tredicesima') cur[12]=(cur[12]||0)+v; else if (p.tipo==='quattordicesima') cur[13]=(cur[13]||0)+v; else cur[p.month]=(cur[p.month]||0)+v; });
+            dp.forEach(p => { const v = p.netto + ((p.ggLav||0)*8); if (p.tipo==='tredicesima') prev[12]=(prev[12]||0)+v; else if (p.tipo==='quattordicesima') prev[13]=(prev[13]||0)+v; else prev[p.month]=(prev[p.month]||0)+v; });
+            this.charts.c = new Chart(c1, { type:'line', data:{labels:mesi, datasets:[ {label:''+cy, data:cur, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.15)', fill:true, tension:0.3, borderWidth:4, pointRadius:6, pointBackgroundColor:'#10B981', pointBorderColor:'#fff', pointBorderWidth:2, spanGaps:true}, {label:''+py, data:prev, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3, borderWidth:4, pointRadius:6, pointBackgroundColor:'#3B82F6', pointBorderColor:'#fff', pointBorderWidth:2, spanGaps:true} ]},
+                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#FFF',font:{size:14,weight:'bold'},padding:20}}, tooltip:{backgroundColor:'#1A1A1E',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:ctx=>` ${ctx.dataset.label}: €${ctx.raw?.toLocaleString()||'N/D'}`}}}, scales:{y:{beginAtZero:false,grace:'10%',ticks:{callback:v=>'€'+v.toLocaleString(),color:'#B0B0B0',font:{size:12}},grid:{color:'rgba(255,255,255,0.1)'}},x:{ticks:{color:'#B0B0B0',font:{size:11}},grid:{display:false}}} }
             });
         }
         const c2 = document.getElementById('totalChart')?.getContext('2d');
         if (c2) {
             if (this.charts.t) this.charts.t.destroy();
-            const years = [...new Set(all.map(p=>p.year))].sort();
-            const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto+((p.ggLav||0)*8),0));
-            this.charts.t = new Chart(c2, {
-                type:'bar', data:{labels:years, datasets:[{label:'Totale', data:totals, backgroundColor:years.map(y=>y===cy?'rgba(16,185,129,0.9)':'rgba(59,130,246,0.7)'), borderRadius:12, borderSkipped:false}]},
-                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#1A1A1E',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:ctx=>` €${ctx.raw.toLocaleString()}`}}},
-                    scales:{y:{beginAtZero:false,grace:'5%',ticks:{callback:v=>'€'+(v/1000).toFixed(0)+'k',color:'#B0B0B0',font:{size:12}},grid:{color:'rgba(255,255,255,0.1)'}},x:{ticks:{color:'#B0B0B0',font:{size:12}},grid:{display:false}}}
-                }
+            const yearsAll = [...new Set(all.map(p=>p.year))].sort(); const totals = yearsAll.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto+((p.ggLav||0)*8),0));
+            this.charts.t = new Chart(c2, { type:'bar', data:{labels:yearsAll, datasets:[{label:'Totale', data:totals, backgroundColor:yearsAll.map(y=>y===cy?'rgba(16,185,129,0.9)':'rgba(59,130,246,0.7)'), borderRadius:12, borderSkipped:false}]},
+                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#1A1A1E',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:ctx=>` €${ctx.raw.toLocaleString()}`}}}, scales:{y:{beginAtZero:false,grace:'5%',ticks:{callback:v=>'€'+(v/1000).toFixed(0)+'k',color:'#B0B0B0',font:{size:12}},grid:{color:'rgba(255,255,255,0.1)'}},x:{ticks:{color:'#B0B0B0',font:{size:12}},grid:{display:false}}} }
             });
         }
     }
-
-    async esportaDB() {
-        const all = await this.db.all();
-        const backup = { versione: '1.0', data: new Date().toISOString(), cedolini: all };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `cedolini-backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
-        URL.revokeObjectURL(url);
-        this.toast('✅ Backup esportato!');
-    }
-
-    async importaDB(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        try {
-            const text = await file.text();
-            const backup = JSON.parse(text);
-            if (!backup.cedolini || !Array.isArray(backup.cedolini)) throw new Error('Formato non valido');
-            if (confirm(`Importare ${backup.cedolini.length} cedolini?`)) {
-                for (const ced of backup.cedolini) { await this.db.save(ced); }
-                this.toast(`✅ Importati ${backup.cedolini.length} cedolini!`);
-                await this.loadHome();
-                await this.loadStorico();
-            }
-        } catch (err) { alert('❌ File non valido.'); }
-        event.target.value = '';
-    }
-
-    toast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg; t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 2000);
-    }
+    async esportaDB() { const all = await this.db.all(); const backup = { versione:'1.0', data:new Date().toISOString(), cedolini:all }; const blob = new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`cedolini-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); this.toast('✅ Backup esportato!'); }
+    async importaDB(event) { const file = event.target.files[0]; if(!file)return; try { const text = await file.text(); const backup = JSON.parse(text); if(!backup.cedolini||!Array.isArray(backup.cedolini))throw new Error('Formato non valido'); if(confirm(`Importare ${backup.cedolini.length} cedolini?`)){for(const ced of backup.cedolini){await this.db.save(ced);} this.toast(`✅ Importati ${backup.cedolini.length} cedolini!`); await this.loadHome(); await this.loadStorico();} } catch(err){alert('❌ File non valido.');} event.target.value=''; }
+    toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
 }
-
 let app;
 document.addEventListener('DOMContentLoaded', async () => { app = new App(); await app.init(); });
 </script>

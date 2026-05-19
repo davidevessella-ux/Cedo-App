@@ -373,7 +373,7 @@
         <div class="logo">💎</div>
         <div class="header-title">
             <h1>Cedolini <span class="pro">Pro</span></h1>
-            <span class="version">Beta 0.12</span>
+            <span class="version">Beta 0.13</span>
         </div>
         <div class="header-nav">
             <button class="nav-btn active" data-scr="home">Home</button>
@@ -478,6 +478,7 @@
             <div class="filter-row">
                 <select id="storicoAnno" onchange="app.loadStorico()">
                     <option value="tutti">Tutti gli anni</option>
+                    <option value="2022">2022</option>
                     <option value="2023">2023</option>
                     <option value="2024">2024</option>
                     <option value="2025">2025</option>
@@ -501,7 +502,7 @@ class DB {
     constructor() { this.db = null; }
     async init() {
         return new Promise((ok, ko) => {
-            const r = indexedDB.open('CED_V44', 1);
+            const r = indexedDB.open('CED_V45', 1);
             r.onupgradeneeded = e => {
                 const s = e.target.result.createObjectStore('ced', { keyPath: 'id', autoIncrement: true });
                 s.createIndex('ym', 'ym', { unique: true });
@@ -651,7 +652,6 @@ class App {
         
         const tipo = document.getElementById('tipoInput').value;
         if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
-            // Per 13ª e 14ª, non impostare il mese
             document.getElementById('meseInput').value = '';
         } else if (dm) {
             document.getElementById('meseInput').value = `${dm[2]}-${dm[1]}`;
@@ -693,7 +693,6 @@ class App {
             document.getElementById('ggLavInput').value = '0';
         }
 
-        // Applica la visibilità in base al tipo
         this.onTipoChange();
 
         document.getElementById('uploadSection').style.display = 'none';
@@ -733,7 +732,6 @@ class App {
         let meseRif, annoRif, ym;
         
         if (tipo === 'tredicesima' || tipo === 'quattordicesima') {
-            // Per 13ª e 14ª: usa solo l'anno dal nome file
             annoRif = this.annoFile || new Date().getFullYear();
             meseRif = tipo === 'tredicesima' ? 11 : 5;
             ym = tipo === 'tredicesima' ? `13-${annoRif}` : `14-${annoRif}`;
@@ -916,13 +914,43 @@ class App {
             });
             this.charts.c = new Chart(c1, {
                 type:'line', data:{labels:mesi, datasets:[
-                    {label:''+cy, data:cur, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3, borderWidth:3, pointRadius:4, spanGaps:true},
-                    {label:''+py, data:prev, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3, borderWidth:2, pointRadius:4, spanGaps:true}
+                    {
+                        label:''+cy, data:cur,
+                        borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.15)',
+                        fill:true, tension:0.3, borderWidth: 4, pointRadius: 6,
+                        pointBackgroundColor: '#10B981', pointBorderColor: '#fff', pointBorderWidth: 2,
+                        spanGaps:true
+                    },
+                    {
+                        label:''+py, data:prev,
+                        borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,0.1)',
+                        fill:true, tension:0.3, borderWidth: 4, pointRadius: 6,
+                        pointBackgroundColor: '#3B82F6', pointBorderColor: '#fff', pointBorderWidth: 2,
+                        spanGaps:true
+                    }
                 ]},
-                options:{responsive:true, maintainAspectRatio:false, scales:{
-                    y:{min:2000, ticks:{stepSize:50, callback:v=>'€'+v.toLocaleString(), color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}},
-                    x:{ticks:{color:'#999'}}
-                }}
+                options:{
+                    responsive:true, maintainAspectRatio:false,
+                    plugins: {
+                        legend: { labels: { color: '#FFF', font: { size: 14, weight: 'bold' }, padding: 20 } },
+                        tooltip: {
+                            backgroundColor: '#1A1A1E', titleColor: '#FFF', bodyColor: '#FFF',
+                            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, cornerRadius: 8,
+                            callbacks: { label: ctx => ` ${ctx.dataset.label}: €${ctx.raw?.toLocaleString()||'N/D'}` }
+                        }
+                    },
+                    scales:{
+                        y:{
+                            beginAtZero: false, grace: '10%',
+                            ticks: { callback: v => '€' + v.toLocaleString(), color: '#B0B0B0', font: { size: 12 } },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        },
+                        x:{
+                            ticks: { color: '#B0B0B0', font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
             });
         }
         const c2 = document.getElementById('totalChart')?.getContext('2d');
@@ -931,11 +959,33 @@ class App {
             const years = [...new Set(all.map(p=>p.year))].sort();
             const totals = years.map(y => all.filter(p=>p.year===y).reduce((s,p)=>s+p.netto+((p.ggLav||0)*8),0));
             this.charts.t = new Chart(c2, {
-                type:'bar', data:{labels:years, datasets:[{label:'Totale', data:totals, backgroundColor:years.map(y=>y===cy?'rgba(16,185,129,0.8)':'rgba(59,130,246,0.6)'), borderRadius:10}]},
-                options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
-                    y:{min:20000, ticks:{stepSize:500, callback:v=>'€'+(v/1000).toFixed(0)+'k', color:'#999'}, grid:{color:'rgba(255,255,255,0.05)'}},
-                    x:{ticks:{color:'#999'}}
-                }}
+                type:'bar', data:{labels:years, datasets:[{
+                    label:'Totale Netto + BP', data:totals,
+                    backgroundColor: years.map(y => y === cy ? 'rgba(16,185,129,0.9)' : 'rgba(59,130,246,0.7)'),
+                    borderRadius: 12, borderSkipped: false,
+                }]},
+                options:{
+                    responsive:true, maintainAspectRatio:false,
+                    plugins:{
+                        legend:{display:false},
+                        tooltip: {
+                            backgroundColor: '#1A1A1E', titleColor: '#FFF', bodyColor: '#FFF',
+                            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, cornerRadius: 8,
+                            callbacks: { label: ctx => ` €${ctx.raw.toLocaleString()}` }
+                        }
+                    },
+                    scales:{
+                        y:{
+                            beginAtZero: false, grace: '5%',
+                            ticks: { callback: v => '€' + (v/1000).toFixed(0) + 'k', color: '#B0B0B0', font: { size: 12 } },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        },
+                        x:{
+                            ticks: { color: '#B0B0B0', font: { size: 12 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
             });
         }
     }
